@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESAF LOS vs OPTIM LOS - Comparison Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f0f4f8;overflow-x:hidden}
+  .glass{background:rgba(255,255,255,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.3)}
+  .glass-dark{background:rgba(15,23,42,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08)}
+  .sidebar{width:260px;height:100vh;position:fixed;top:0;left:0;overflow-y:auto;z-index:50;transition:transform .3s ease}
+  .sidebar::-webkit-scrollbar{width:4px}
+  .sidebar::-webkit-scrollbar-thumb{background:#6366f1;border-radius:4px}
+  .main-content{margin-left:260px;min-height:100vh}
+  .nav-item{padding:10px 16px;border-radius:10px;cursor:pointer;transition:all .25s ease;font-size:13px;display:flex;align-items:center;gap:10px}
+  .nav-item:hover{background:rgba(99,102,241,0.12);color:#4f46e5;transform:translateX(3px)}
+  .nav-item.active{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 4px 15px rgba(99,102,241,0.35)}
+  .summary-card{background:linear-gradient(135deg,var(--tw-gradient-from),var(--tw-gradient-to));border-radius:16px;padding:20px;color:#fff;transition:all .3s ease;cursor:default}
+  .summary-card{cursor:pointer}.summary-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,0.15)}
+  .feature-card{border-radius:14px;overflow:hidden;transition:all .3s ease;background:#fff;border:1px solid rgba(226,232,240,0.6)}
+  .feature-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.1)}
+  .badge-esaf{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600}
+  .badge-optim{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600}
+  .badge-advantage{background:#fffbeb;color:#d97706;border:1px solid #fde68a;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600}
+  .badge-benefit{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600}
+  .badge-diff{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700}
+  .dept-tab{padding:7px 16px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:500;transition:all .25s ease;border:1px solid #e2e8f0;background:#fff;white-space:nowrap}
+  .dept-tab:hover{background:#eef2ff;border-color:#a5b4fc;color:#4f46e5}
+  .dept-tab.active{background:#6366f1;color:#fff;border-color:#6366f1}
+  .stage-node{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer;transition:all .3s ease;flex-shrink:0;border:3px solid #e2e8f0;background:#fff;color:#64748b;position:relative;z-index:2}
+  .stage-node:hover{transform:scale(1.15);border-color:#6366f1;color:#4f46e5}
+  .stage-node.active{background:#6366f1;color:#fff;border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,0.2)}
+  .stage-node.completed{background:#16a34a;color:#fff;border-color:#16a34a}
+  .stage-connector{height:3px;flex:1;background:#e2e8f0;min-width:20px;position:relative;z-index:1}
+  .stage-connector.active{background:#6366f1}
+  .stage-label{font-size:10px;text-align:center;margin-top:6px;font-weight:500;color:#475569;max-width:80px;word-wrap:break-word;line-height:1.2;cursor:pointer;transition:color .2s}
+  .stage-label:hover{color:#4f46e5}
+  .timeline-dot{width:14px;height:14px;border-radius:50%;background:#e2e8f0;flex-shrink:0;margin-top:4px}
+  .timeline-dot.active{background:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.2)}
+  .timeline-dot.completed{background:#16a34a}
+  .section-header{font-size:22px;font-weight:700;color:#1e293b;position:relative;padding-left:16px}
+  .section-header::before{content:'';position:absolute;left:0;top:2px;bottom:2px;width:4px;background:linear-gradient(180deg,#6366f1,#818cf8);border-radius:4px}
+  .count-up{font-size:28px;font-weight:800}
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.4)}50%{box-shadow:0 0 0 12px rgba(99,102,241,0)}}
+  .anim-fade{animation:fadeInUp .5s ease forwards}
+  .anim-slide{animation:slideIn .4s ease forwards}
+  .pulse-glow{animation:pulse-glow 2s infinite}
+  .stagger-1{animation-delay:.05s}
+  .stagger-2{animation-delay:.1s}
+  .stagger-3{animation-delay:.15s}
+  .stagger-4{animation-delay:.2s}
+  .stagger-5{animation-delay:.25s}
+  .stagger-6{animation-delay:.3s}
+  .stagger-7{animation-delay:.35s}
+  .stagger-8{animation-delay:.4s}
+  .content-section{display:none;animation:fadeInUp .4s ease}
+  .content-section.active{display:block}
+  .search-box{border-radius:12px;border:1px solid #e2e8f0;padding:10px 16px 10px 40px;font-size:14px;outline:none;transition:all .25s;width:100%;max-width:420px;background:#fff}
+  .search-box:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.15)}
+  .export-btn{padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .25s;border:1px solid #e2e8f0;background:#fff;display:flex;align-items:center;gap:6px}
+  .export-btn:hover{background:#f1f5f9;border-color:#cbd5e1;transform:translateY(-1px)}
+  .doc-cat{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:1px solid #e2e8f0}
+  .doc-cat:hover{background:#eef2ff;border-color:#a5b4fc}
+  .doc-cat.active{background:#6366f1;color:#fff;border-color:#6366f1}
+  .config-item{padding:12px 16px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;cursor:pointer;transition:all .25s;font-size:13px;font-weight:500}
+  .config-item:hover{background:#f8fafc;border-color:#6366f1;transform:translateX(4px)}
+  .config-item i{color:#6366f1;font-size:18px}
+  .roadmap-card{border-radius:14px;padding:20px;background:linear-gradient(135deg,#fff,#f8fafc);border:1px solid #e2e8f0;transition:all .3s}
+  .roadmap-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.08);border-color:#818cf8}
+  #toast{position:fixed;bottom:30px;right:30px;padding:14px 24px;border-radius:12px;color:#fff;font-size:14px;font-weight:500;z-index:9999;transform:translateY(100px);opacity:0;transition:all .4s ease}
+  #toast.show{transform:translateY(0);opacity:1}
+  @media(max-width:1024px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0}}
+  @media print{body{background:#fff !important}.no-print{display:none !important}.feature-card{break-inside:avoid}.sidebar{display:none !important}.main-content{margin-left:0 !important}}
+  .glow-border{position:relative}
+  .glow-border::after{content:'';position:absolute;inset:-2px;border-radius:inherit;background:linear-gradient(135deg,#6366f1,#a78bfa,#6366f1);z-index:-1;opacity:0;transition:opacity .4s}
+  .glow-border:hover::after{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<aside class="sidebar glass-dark text-white" id="sidebar">
+  <div class="p-5 border-b border-white/10">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">OL</div>
+      <div>
+        <div class="text-sm font-bold tracking-tight">OPTIM LOS</div>
+        <div class="text-[10px] text-indigo-300">Comparison Dashboard</div>
+      </div>
+    </div>
+  </div>
+  <nav class="p-3 space-y-0.5" id="sidebarNav">
+    <div class="nav-item active" data-section="executive"><i class="bi bi-speedometer2 text-sm"></i>Executive Summary</div>
+    <div class="nav-item" data-section="technology"><i class="bi bi-cpu text-sm"></i>Technology Foundation</div>
+    <div class="nav-item" data-section="onboarding"><i class="bi bi-person-plus text-sm"></i>Customer Onboarding</div>
+    <div class="nav-item" data-section="duediligence"><i class="bi bi-search text-sm"></i>Due Diligence</div>
+    <div class="nav-item" data-section="fi"><i class="bi bi-geo-alt text-sm"></i>FI</div>
+    <div class="nav-item" data-section="tvr"><i class="bi bi-telephone text-sm"></i>TVR</div>
+    <div class="nav-item" data-section="rcu"><i class="bi bi-shield-check text-sm"></i>RCU</div>
+    <div class="nav-item" data-section="credit"><i class="bi bi-graph-up-arrow text-sm"></i>Credit Assessment</div>
+    <div class="nav-item" data-section="income"><i class="bi bi-wallet2 text-sm"></i>Income Validation</div>
+    <div class="nav-item" data-section="scorecard"><i class="bi bi-file-spreadsheet text-sm"></i>Score Card</div>
+    <div class="nav-item" data-section="deviation"><i class="bi bi-exclamation-triangle text-sm"></i>Deviation Management</div>
+    <div class="nav-item" data-section="businessapproval"><i class="bi bi-briefcase text-sm"></i>Business Approval</div>
+    <div class="nav-item" data-section="asmapproval"><i class="bi bi-person-check text-sm"></i>ASM Approval</div>
+    <div class="nav-item" data-section="creditapproval"><i class="bi bi-check2-circle text-sm"></i>Credit Approval</div>
+    <div class="nav-item" data-section="sanction"><i class="bi bi-file-text text-sm"></i>Sanction</div>
+    <div class="nav-item" data-section="qcmaker"><i class="bi bi-eye text-sm"></i>QC Maker</div>
+    <div class="nav-item" data-section="qcchecker"><i class="bi bi-eye-slash text-sm"></i>QC Checker</div>
+    <div class="nav-item" data-section="disbursement"><i class="bi bi-cash text-sm"></i>Disbursement</div>
+    <div class="nav-item" data-section="documents"><i class="bi bi-folder text-sm"></i>Document Management</div>
+    <div class="nav-item" data-section="visibility"><i class="bi bi-binoculars text-sm"></i>Case Visibility</div>
+    <div class="nav-item" data-section="audit"><i class="bi bi-journal-text text-sm"></i>Audit Trail</div>
+    <div class="nav-item" data-section="sysconfig"><i class="bi bi-gear text-sm"></i>System Configuration</div>
+    <div class="nav-item" data-section="productconfig"><i class="bi bi-grid text-sm"></i>Product Configuration</div>
+    <div class="nav-item" data-section="reporting"><i class="bi bi-bar-chart text-sm"></i>Reporting & MIS</div>
+    <div class="nav-item" data-section="roadmap"><i class="bi bi-rocket-takeoff text-sm"></i>Future Roadmap</div>
+  </nav>
+  <div class="p-4 border-t border-white/10 mt-2">
+    <div class="flex items-center gap-2 text-indigo-300 text-xs">
+      <i class="bi bi-shield-check"></i>
+      <span>ProHorizon Digitech</span>
+    </div>
+  </div>
+</aside>
+
+<div class="main-content" id="mainContent">
+  <header class="glass sticky top-0 z-40 border-b border-gray-200/60 no-print">
+    <div class="flex items-center justify-between px-6 py-3">
+      <div class="flex items-center gap-4">
+        <button onclick="document.getElementById('sidebar').classList.toggle('open')" class="lg:hidden text-xl text-gray-600"><i class="bi bi-list"></i></button>
+        <div class="relative">
+          <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input type="text" class="search-box pl-10" id="searchInput" placeholder="Search features, departments, stages..." oninput="filterFeatures()">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="export-btn" onclick="exportPDF()"><i class="bi bi-filetype-pdf text-red-500"></i>PDF</button>
+        <button class="export-btn" onclick="exportPrint()"><i class="bi bi-printer text-gray-600"></i>Print</button>
+        <button class="export-btn" onclick="exportExcel()"><i class="bi bi-file-earmark-excel text-green-600"></i>Excel</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="p-6" id="contentArea">
+    <div class="content-section active" id="section-executive">
+      <div class="mb-6 anim-fade">
+        <h1 class="text-2xl font-bold text-gray-800">ESAF SFB vs OPTIM LOS</h1>
+        <p class="text-gray-500 text-sm mt-1">Comprehensive Feature Comparison &amp; Capability Report</p>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="summaryCards"></div>
+
+      <div class="flex gap-2 mb-6 overflow-x-auto pb-2 no-print" id="deptTabs"></div>
+
+      <div class="mb-6 no-print">
+        <div class="flex items-center gap-1 overflow-x-auto pb-3" id="stageJourney"></div>
+      </div>
+
+      <div class="mb-6">
+        <h2 class="section-header mb-4">Top OPTIM Differentiators</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="differentiators"></div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="section-header">All Features Comparison</h2>
+          <span class="text-sm text-gray-500" id="featureCount"></span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="featureCards"></div>
+      </div>
+    </div>
+
+    <div class="content-section" id="section-technology">
+      <h2 class="section-header mb-6">Technology Foundation</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="techCards"></div>
+    </div>
+
+    <div class="content-section" id="section-onboarding">
+      <h2 class="section-header mb-6">Customer Onboarding</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="onboardingCards"></div>
+    </div>
+
+    <div class="content-section" id="section-duediligence"><h2 class="section-header mb-6">Due Diligence</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="ddCards"></div></div>
+    <div class="content-section" id="section-fi"><h2 class="section-header mb-6">FI (Field Investigation)</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="fiCards"></div></div>
+    <div class="content-section" id="section-tvr"><h2 class="section-header mb-6">TVR (Tele Verification)</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="tvrCards"></div></div>
+    <div class="content-section" id="section-rcu"><h2 class="section-header mb-6">RCU (Remote Credit Underwriting)</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="rcuCards"></div></div>
+    <div class="content-section" id="section-credit"><h2 class="section-header mb-6">Credit Assessment</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="creditCards"></div></div>
+    <div class="content-section" id="section-income"><h2 class="section-header mb-6">Income Validation</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="incomeCards"></div></div>
+    <div class="content-section" id="section-scorecard"><h2 class="section-header mb-6">Score Card</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="scoreCards"></div></div>
+    <div class="content-section" id="section-deviation"><h2 class="section-header mb-6">Deviation Management</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="deviationCards"></div></div>
+    <div class="content-section" id="section-businessapproval"><h2 class="section-header mb-6">Business Approval</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="bizCards"></div></div>
+    <div class="content-section" id="section-asmapproval"><h2 class="section-header mb-6">ASM Approval</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="asmCards"></div></div>
+    <div class="content-section" id="section-creditapproval"><h2 class="section-header mb-6">Credit Approval</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="creditApprovalCards"></div></div>
+    <div class="content-section" id="section-sanction"><h2 class="section-header mb-6">Sanction</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="sanctionCards"></div></div>
+    <div class="content-section" id="section-qcmaker"><h2 class="section-header mb-6">QC Maker</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="qcMakerCards"></div></div>
+    <div class="content-section" id="section-qcchecker"><h2 class="section-header mb-6">QC Checker</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="qcCheckerCards"></div></div>
+    <div class="content-section" id="section-disbursement"><h2 class="section-header mb-6">Disbursement</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="disburseCards"></div></div>
+
+    <div class="content-section" id="section-documents">
+      <h2 class="section-header mb-6">Document Management</h2>
+      <div class="flex flex-wrap gap-2 mb-6" id="docCategories"></div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="docCards"></div>
+    </div>
+
+    <div class="content-section" id="section-visibility">
+      <h2 class="section-header mb-6">Case Visibility &amp; 360-Degree View</h2>
+      <div class="glass rounded-2xl p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Case History Timeline</h3>
+        <div class="space-y-3" id="caseHistoryTimeline"></div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="visibilityCards"></div>
+    </div>
+
+    <div class="content-section" id="section-audit">
+      <h2 class="section-header mb-6">Audit Trail &amp; Compliance</h2>
+      <div class="glass rounded-2xl p-6 mb-6">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" id="auditTable">
+            <thead><tr class="border-b border-gray-200 text-left text-gray-500 text-xs uppercase"><th class="pb-3 font-semibold">Activity</th><th class="pb-3 font-semibold">User</th><th class="pb-3 font-semibold">Role</th><th class="pb-3 font-semibold">Date &amp; Time</th><th class="pb-3 font-semibold">Remarks</th></tr></thead>
+            <tbody class="divide-y divide-gray-100" id="auditBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="auditCards"></div>
+    </div>
+
+    <div class="content-section" id="section-sysconfig">
+      <h2 class="section-header mb-6">System Configuration</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6" id="configItems"></div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="sysConfigCards"></div>
+    </div>
+
+    <div class="content-section" id="section-productconfig">
+      <h2 class="section-header mb-6">Product Configuration</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="productConfigCards"></div>
+    </div>
+
+    <div class="content-section" id="section-reporting">
+      <h2 class="section-header mb-6">Reporting &amp; MIS</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" id="misCards"></div>
+    </div>
+
+    <div class="content-section" id="section-roadmap">
+      <h2 class="section-header mb-6">Future Roadmap</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="roadmapCards"></div>
+    </div>
+  </div>
+
+  <footer class="text-center py-6 text-gray-400 text-xs border-t border-gray-200/60 no-print">
+    ProHorizon Digitech Pvt. Ltd. &bull; Confidential &bull; June 2026 &bull; OPTIM LOS Comparison Dashboard v1.0
+  </footer>
+</div>
+
+<script>
+const features = [
+  {id:1,section:"A",featureName:"Login Screen and Authentication",esafStatus:"User login with credentials",optimStatus:"Secure login with User ID, Password, Captcha and 2FA OTP verification. OTP timer to prevent reuse; resend OTP option for failed delivery. Role-mapped dashboard access after successful verification.",optimAdvantage:"Stronger entry-point security with 2FA and role-specific user experience from the first screen",businessBenefit:"Enhanced security and personalized user experience from login",departments:["IT","Risk & Compliance"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:2,section:"A",featureName:"Two-Factor Authentication (2FA)",esafStatus:"Basic OTP in existing flow",optimStatus:"6-digit OTP sent to registered mobile number after credential validation. OTP validity timer enforces session security. Protects approval workflows and sensitive loan data from unauthorized access.",optimAdvantage:"Security layer critical for mobile-based approval workflows used by Credit, Business and ASM users",businessBenefit:"Critical security for mobile-based approvals across all roles",departments:["IT","Risk & Compliance"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:3,section:"A",featureName:"Role-Based Dashboard and Access",esafStatus:"Role-based process screens available",optimStatus:"SO gets Apply Loan, My Task, Query, Recent Activity and System Tools. Credit users get Credit Deviation Queue, Credit Approval Queue, My Task from mobile. Business users get Business Queue for deviations/approvals from mobile. ASM users get assigned cases, approval notes, decisioning from mobile.",optimAdvantage:"Each role gets a purpose-built workspace; no clutter, no unauthorized access",businessBenefit:"Purpose-built workspaces improve productivity and prevent unauthorized access",departments:["Sales","Credit","Business","ASM","Operations"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:4,section:"A",featureName:"FI / Field Investigation from Mobile",esafStatus:"FI initiated via web portal by operations/credit",optimStatus:"FI valuation activities can be initiated, tracked and updated from mobile. Field teams capture FI findings, property/asset valuation data and submit reports through mobile app. FI status visible inside CAM for credit review.",optimAdvantage:"Eliminates dependency on web portal for field investigation; speeds up FI completion",businessBenefit:"Reduces TAT for field investigations; mobile accessibility improves completion speed",departments:["FI"],stage:"FI",isTopDifferentiator:false},
+  {id:5,section:"B",featureName:"Sourcing Channel Selection",esafStatus:"Channel selection at lead creation",optimStatus:"Supports 7 sourcing channels: Direct, DSA, DDSA, Corporate DSA, BC with FLDG, BC without FLDG, Branch. Channel-wise MIS and business tracking built in.",optimAdvantage:"Supports complex multi-channel sourcing models for future business expansion",businessBenefit:"Multi-channel sourcing flexibility enables business expansion",departments:["Sales","Operations"],stage:"Lead Creation",isTopDifferentiator:false},
+  {id:6,section:"B",featureName:"Customer Mobile Verification and Consent",esafStatus:"Mobile OTP verification available",optimStatus:"Mobile verification embedded in guided onboarding. Mandatory customer consent captured before using mobile for loan processing. Consent evidence stored for compliance and audit.",optimAdvantage:"Stronger regulatory compliance through documented customer consent capture",businessBenefit:"Regulatory compliance with documented consent evidence",departments:["Sales","Operations","Risk & Compliance"],stage:"Lead Creation",isTopDifferentiator:false},
+  {id:7,section:"B",featureName:"KYC and Aadhaar eKYC",esafStatus:"KYC and eKYC available",optimStatus:"Aadhaar-based digital eKYC with OTP authentication and demographic fetching. Other Document KYC supported: Voter ID, Driving Licence, Passport. eKYC completion tracked and enforced before Sanction Letter stage.",optimAdvantage:"Flexible KYC with digital Aadhaar preference and hard compliance enforcement before disbursement",businessBenefit:"Flexible digital KYC with enforcement reduces compliance risk",departments:["Sales","Operations","Risk & Compliance"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:8,section:"B",featureName:"Applicant Data Capture",esafStatus:"Personal and address details captured",optimStatus:"Personal details: POI type, POI document, POI number, name, DOB, gender, father name. Address: POA type, POA document, address lines, pincode, district, state. Additional: live customer photo, PAN card capture and PAN number verification. Loan amount entry at onboarding.",optimAdvantage:"Structured data capture reduces downstream errors and speeds up verification stages",businessBenefit:"Structured data capture reduces errors and accelerates verification",departments:["Sales"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:9,section:"B",featureName:"Automated Deduplication",esafStatus:"Not presented as a strong controlled feature",optimStatus:"Automatic dedupe validates mobile, Aadhaar, PAN, POI, POA and existing customer records on submission. Duplicate leads auto-marked and locked from further processing. Routed to Duplicate Lead Queue with all match parameters displayed.",optimAdvantage:"Prevents duplicate lending, fraud risk and portfolio leakage before any processing begins",businessBenefit:"Prevents duplicate lending and fraud before processing starts",departments:["IT","Risk & Compliance"],stage:"Lead Creation",isTopDifferentiator:false},
+  {id:10,section:"B",featureName:"Duplicate Lead Governance",esafStatus:"Duplicate handling not a visible controlled queue",optimStatus:"Reference Lead List shows all matching applications with match parameters per identifier. Approver can Cancel Existing Application to ensure data consistency. Approve or Reject actions with mandatory remarks; complete audit trail maintained.",optimAdvantage:"Structured exception approval with full match visibility before any duplicate case proceeds",businessBenefit:"Structured governance prevents duplicate processing with full visibility",departments:["Risk & Compliance","Management"],stage:"Lead Creation",isTopDifferentiator:false},
+  {id:11,section:"B",featureName:"Auto Journey Block and Auto Resume",esafStatus:"Stage movement is user/process driven",optimStatus:"Bureau Reject → Journey auto-blocked; Bureau Approve → Journey auto-opens. Duplicate Lead → Journey auto-locked; Duplicate Approval → Journey auto-resumes. Compliance Reject → Journey blocked until corrected.",optimAdvantage:"A major architectural differentiator: the system drives case progression through policy outcomes",businessBenefit:"System-driven journey management reduces manual effort and ensures policy compliance",departments:["IT","Operations"],stage:"Lead Creation",isTopDifferentiator:false},
+  {id:12,section:"C",featureName:"Asset Details and Vehicle Capture",esafStatus:"Asset and loan details captured in process",optimStatus:"Manufacturer, model, variant and fuel type mapped to product policy. Supported categories: Two Wheeler, Car, Tractor, Commercial Vehicle, Agriculture, Mortgage. All five loan products available.",optimAdvantage:"Accurate asset financing with model-level policy mapping and multi-product support",businessBenefit:"Model-level policy mapping ensures accurate asset financing",departments:["Sales"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:13,section:"C",featureName:"Automated Financial Calculations",esafStatus:"Loan structure depends on user inputs",optimStatus:"Auto-calculates: Total Asset Cost, On-Road Price, Finance Eligibility, LTV, FOIR, EMI. Charges: Processing Fee %, Processing Fee Amount, CLI, Hospi Premium, Document Charges. Funded and Non-Funded charge classification auto-applied.",optimAdvantage:"Eliminates calculation errors and significantly reduces time spent on loan structuring",businessBenefit:"Eliminates manual calculation errors; speeds up loan structuring",departments:["Sales","Credit"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:14,section:"C",featureName:"Deal Summary Before Submission",esafStatus:"Deal review depends on user validation",optimStatus:"Comprehensive Deal Summary shows Applied Amount, Finance Amount, On-Road Price, LTV %, Offered ROI, Policy ROI, Tenure, all charges and EMI amount before submission. User reviews and confirms before proceeding.",optimAdvantage:"Reduces submission errors and gives SO complete visibility before committing",businessBenefit:"Reduces submission errors with full pre-submission visibility",departments:["Sales"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:15,section:"C",featureName:"Partially Submitted Journey",esafStatus:"Stage submission can lock data prematurely",optimStatus:"Loan Details, Score Card and Document Upload remain editable until Application Form is submitted. Allows data corrections without case rejection or rework escalation. All stages show Partially Submitted status until final lock.",optimAdvantage:"Critical field flexibility feature that reduces rework and improves data accuracy",businessBenefit:"Field flexibility reduces rework and prevents avoidable case failures",departments:["Sales","Operations"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:16,section:"C",featureName:"Additional Document Upload",esafStatus:"Document upload follows standard list",optimStatus:"Flexible Additional Document Upload from configurable document list. Supports: Aadhaar, Bank Passbook, Signed Cheque, Driving Licence, Income Documents, Business Address Proof. Available at upload stage and throughout credit/business workflow.",optimAdvantage:"Removes bottleneck of missing documents; teams can request documents without process disruption",businessBenefit:"Removes document bottlenecks; teams can request documents without disruption",departments:["Sales","Operations","Credit"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:17,section:"D",featureName:"Self-Assignment from Queue",esafStatus:"Case allocation through process",optimStatus:"Due Diligence Officers self-assign cases from queue to My Task section. Workload distributed among multiple DD officers based on capacity. Better task ownership and accountability.",optimAdvantage:"Eliminates allocation bottleneck and improves workload distribution across teams",businessBenefit:"Eliminates allocation bottlenecks; improves workload distribution",departments:["Operations"],stage:"Due Diligence",isTopDifferentiator:false},
+  {id:18,section:"D",featureName:"Document Verification Outcomes",esafStatus:"Documents reviewed before underwriting",optimStatus:"Three outcomes: Verified, Image Distorted, Compliance Reject. Image Distorted: auto-routes to SO for recapture; returns to same DD officer after correction. Compliance Reject: blocks processing until corrected.",optimAdvantage:"Prevents rejection for minor document issues while hard-blocking compliance failures",businessBenefit:"Prevents rejection for minor issues while blocking compliance failures",departments:["Operations"],stage:"Due Diligence",isTopDifferentiator:false},
+  {id:19,section:"D",featureName:"Parallel Processing after Due Diligence",esafStatus:"Sequential processing across CPA, FI and credit stages",optimStatus:"CAM Pending Queue and RCU Queue auto-created simultaneously upon Due Diligence completion. Credit and RCU teams work in parallel. Reduces total lifecycle time between verification and credit decision.",optimAdvantage:"A critical TAT reduction feature; removes sequential waiting between verification and credit",businessBenefit:"Critical TAT reduction through parallel processing",departments:["Operations","Credit","Management"],stage:"Due Diligence",isTopDifferentiator:false},
+  {id:20,section:"E",featureName:"CAM Preparation and Single-Screen Review",esafStatus:"L0 prepares CAM after required checks",optimStatus:"Auto-fetches: customer, asset, income, bureau, FI, TVR, RCU, due diligence and document data into one screen. Integrated document repository inside CAM. No manual data consolidation required.",optimAdvantage:"Faster credit assessment with zero manual data gathering; all information in one connected view",businessBenefit:"Zero manual data gathering; all info in one connected view",departments:["Credit"],stage:"Credit Assessment",isTopDifferentiator:false},
+  {id:21,section:"E",featureName:"Auto-Generated Credit Memo and Disbursement Memo",esafStatus:"Memo preparation is user-driven",optimStatus:"Credit Memo auto-generated with member details, bureau, FI, TVR, RCU, income, deviations, IPA details, sanction terms, conditions and remarks. Disbursement Memo auto-generated with asset details, deal structure, QC details. Standardized PDF format.",optimAdvantage:"Eliminates manual memo preparation; standardized output ensures compliance",businessBenefit:"Eliminates manual memo prep; standardized compliance output",departments:["Credit","Operations"],stage:"Credit Assessment",isTopDifferentiator:false},
+  {id:22,section:"E",featureName:"BRE-Based Deviation Detection Engine",esafStatus:"Deviations raised and escalated through process",optimStatus:"Business Rule Engine auto-identifies: CIBIL below threshold, Age deviation, FOIR breach, LTV breach, Income below policy, Asset age, Processing fee waiver, Insurance waiver. Fully configurable: Rule Name, Threshold, Product/Scheme mapping, Credit Level, Approval Matrix. Zero code changes required.",optimAdvantage:"Most powerful credit governance feature: policy breaches identified instantly without user judgement",businessBenefit:"Instant policy breach detection; zero-code rule configuration",departments:["Credit","Risk & Compliance"],stage:"Deviation",isTopDifferentiator:true},
+  {id:23,section:"E",featureName:"Deviation Management and Approval",esafStatus:"Deviation approval through authority escalation",optimStatus:"Auto and manual deviations consolidated in single screen. Actions: Approve, Reject, Hold, Request Clarification, CAM Edit, Raise Query, Request Documents. Approval history and remarks per deviation; complete audit trail.",optimAdvantage:"Structured deviation governance replaces informal escalation; every exception has documented authority",businessBenefit:"Structured governance with documented approval authority for all exceptions",departments:["Credit","Business","Risk & Compliance"],stage:"Deviation",isTopDifferentiator:false},
+  {id:24,section:"E",featureName:"CAM Edit Workflow",esafStatus:"Corrections require back-and-forth handling",optimStatus:"Credit/deviation/IPA authority sends case back to CAM Maker with remarks. Case returns to same authority after correction; no restart of approval chain. No duplicate work; complete audit trail.",optimAdvantage:"Saves significant time on re-work cycles; authority levels preserved across corrections",businessBenefit:"Saves time on rework; preserves authority levels across corrections",departments:["Credit"],stage:"Credit Assessment",isTopDifferentiator:false},
+  {id:25,section:"E",featureName:"Deviation Approval on Mobile (Credit User)",esafStatus:"Web portal required for credit approvals",optimStatus:"Credit users perform full approval workflow from mobile without web portal. Credit Deviation Queue, Credit Approval Queue, My Task on mobile. Full case review, Credit Memo, scorecards, Approve/Reject Deviations, IPA, Credit decisions from mobile.",optimAdvantage:"Game-changing mobility: credit decisions no longer wait for desk-based portal access",businessBenefit:"Real-time credit decisions from anywhere; no desk dependency",departments:["Credit"],stage:"Credit Approval",isTopDifferentiator:true},
+  {id:26,section:"E",featureName:"In-Principle Approval (IPA)",esafStatus:"Credit evaluation/approval part of underwriting",optimStatus:"IPA stage allows authority to define preliminary sanction: amount, tenure, repayment frequency, conditions, remarks. Auto-calculates LTV, FOIR and EMI based on entered sanction amount. Actions: Approve, Reject, CAM Edit, Raise Query, Request Documents.",optimAdvantage:"Early risk-based commitment reduces uncertainty for business and SO teams before final sanction",businessBenefit:"Early risk commitment reduces uncertainty before final sanction",departments:["Credit"],stage:"Credit Approval",isTopDifferentiator:false},
+  {id:27,section:"E",featureName:"Credit Approval and Final Decisioning",esafStatus:"Credit manager approves after FI and conditions",optimStatus:"Single-screen access to full case: customer profile, credit memo, bureau, FI, TVR, RCU, income, deviations, IPA and sanction conditions. Finalize amount, tenure, frequency, verify account, add conditions, approve, decline, raise query.",optimAdvantage:"Complete decision context in one place; reduces review time and improves decision quality",businessBenefit:"Complete decision context; reduces review time, improves quality",departments:["Credit"],stage:"Credit Approval",isTopDifferentiator:false},
+  {id:28,section:"F",featureName:"Deal Structure Module",esafStatus:"SO fills final loan structure after credit approval",optimStatus:"SO configures within credit-approved limits: final loan amount, processing fee, ROI, CLI, insurance, charges, tenure. Mandatory justification remarks for exceptions. Deal Summary verification screen before submission.",optimAdvantage:"Controlled flexibility: SO can serve customer needs within guardrails with documented justification",businessBenefit:"Controlled flexibility within guardrails; documented justification",departments:["Sales","Business"],stage:"Deviation",isTopDifferentiator:false},
+  {id:29,section:"F",featureName:"Business Deviation Auto-Detection",esafStatus:"Business deviations identified after deal submission",optimStatus:"BRE validates deal on submission against: fee policy, ROI threshold, CLI policy, insurance policy, waiver limits, discount thresholds. Deviations identified instantly; zero manual checking. Compliant deals proceed; deviation deals route to ASM automatically.",optimAdvantage:"Eliminates manual exception checking; instant routing ensures no bypass",businessBenefit:"Zero manual checking; instant routing prevents bypass",departments:["Business","ASM"],stage:"Deviation",isTopDifferentiator:false},
+  {id:30,section:"F",featureName:"ASM Approval from Mobile",esafStatus:"ASM/business approvals via web portal queue",optimStatus:"ASM reviews all business deviations from mobile/web: policy value, availed value, deviation amount, SO justification. Provides recommendation remarks, forwards for Business Approval. Can return case to SO for renegotiation. Mobile-enabled workflow.",optimAdvantage:"Faster TAT for deal approvals; ASM decisions no longer wait for desktop access",businessBenefit:"Faster deal approvals; no desktop dependency for ASM decisions",departments:["ASM"],stage:"ASM Approval",isTopDifferentiator:true},
+  {id:31,section:"F",featureName:"Business Approval from Mobile",esafStatus:"Business approval through web portal queue",optimStatus:"Business users perform final deviation authorization from mobile/web. Approve or Reject each deviation individually with remarks. Configurable approval matrix by product, scheme, deviation type and amount. Reviews ASM recommendation and complete history.",optimAdvantage:"Final deviation authority from anywhere; configurable matrix evolves without IT dependency",businessBenefit:"Authority from anywhere; configurable matrix without IT dependency",departments:["Business"],stage:"Business Approval",isTopDifferentiator:true},
+  {id:32,section:"F",featureName:"Multi-Attempt Deviation Tracking",esafStatus:"History available in process logs",optimStatus:"Complete history across every attempt: previous deal structures, deviations, ASM remarks, business remarks, approval decisions, rejection reasons, user actions, timestamps. Re-submission triggers fresh BRE evaluation.",optimAdvantage:"Full traceability of every exception negotiation cycle; management audit-ready at any point",businessBenefit:"Full exception traceability; always audit-ready",departments:["Business","ASM","Risk & Compliance"],stage:"Deviation",isTopDifferentiator:false},
+  {id:33,section:"F",featureName:"Re-Submission and Re-Evaluation Cycle",esafStatus:"Re-submission follows process workflow",optimStatus:"When Business rejects deviation, case returns to SO for restructuring. SO revises: Processing Fee, ROI, CLI, Insurance, Tenure. Re-submission triggers fresh BRE check; new deviations go through full ASM → Business cycle.",optimAdvantage:"Closed-loop governance: no deviation approved outside configured workflow regardless of revisions",businessBenefit:"Closed-loop governance prevents unauthorized approvals",departments:["Business","Sales"],stage:"Business Approval",isTopDifferentiator:false},
+  {id:34,section:"G",featureName:"Sanction Letter Stage with eKYC Gate",esafStatus:"Sanction letter stage follows eKYC requirement",optimStatus:"eKYC status validated before Sanction stage opens; eKYC pending = processing blocked. Aadhaar OTP-based eKYC: consent, language, OTP, demographic fetching. Vault Reference Number generated on completion.",optimAdvantage:"Mandatory compliance gate ensures no loan proceeds to sanction without verified identity",businessBenefit:"Mandatory compliance gate; no loan without verified identity",departments:["Operations","Risk & Compliance"],stage:"Sanction",isTopDifferentiator:false},
+  {id:35,section:"G",featureName:"First EMI Date and BPI Calculation",esafStatus:"EMI date selection in sanction stage",optimStatus:"First EMI Date selectable from available schedule options. Auto-calculates: EMI Amount, Repayment Schedule, Loan Maturity Date, Installment Structure. Broken Period Interest (BPI) auto-calculated based on disbursement and first EMI date.",optimAdvantage:"Eliminates manual BPI calculation errors; accurate repayment schedules instantly",businessBenefit:"Eliminates manual BPI errors; instant accurate repayment schedules",departments:["Operations","Credit"],stage:"Sanction",isTopDifferentiator:false},
+  {id:36,section:"G",featureName:"Auto-Generated Loan Documents",esafStatus:"Documents prepared through stage process",optimStatus:"Application Form PDF at Due Diligence completion. Sanction Letter PDF and KFS at Sanction stage. Welcome Letter and Delivery Order at Auth Done. CAM PDF at Loan Booking. All documents available for mobile download by SO.",optimAdvantage:"Zero manual document preparation; standardized regulatory-compliant output at every milestone",businessBenefit:"Zero manual document prep; regulatory-compliant output at every milestone",departments:["Operations"],stage:"Sanction",isTopDifferentiator:false},
+  {id:37,section:"H",featureName:"E-NACH Mandate Registration",esafStatus:"NACH handled after sanction completion",optimStatus:"Auto-fetches loan parameters: customer details, loan amount, EMI, repayment frequency, tenure, first EMI date, repayment account. Mandate lifecycle tracking: Initiated, Pending Auth, Submitted, Processing, Approved, Rejected, Failed. Real-time bank response tracking.",optimAdvantage:"End-to-end mandate visibility; early failure detection prevents disbursement delays",businessBenefit:"End-to-end mandate visibility; early failure detection",departments:["Operations"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:38,section:"H",featureName:"Nominee Details Capture",esafStatus:"Nominee information collected in process",optimStatus:"Structured capture: nominee name, relationship, DOB, gender, mobile, address. Guardian information for minor nominees. Mandatory validation before stage progression.",optimAdvantage:"Compliance-ready nominee records reduce servicing gaps and regulatory audit risk",businessBenefit:"Compliance-ready records reduce audit risk",departments:["Operations","Risk & Compliance"],stage:"Sanction",isTopDifferentiator:false},
+  {id:39,section:"H",featureName:"Pre-Disbursement Document Upload and Checklist",esafStatus:"Final documents verified before disbursement",optimStatus:"Configurable product-wise pre-disbursement document checklist. Supports: PDF, single image, multiple image uploads. Mandatory document validation before case progression to QC.",optimAdvantage:"Configurable checklist eliminates missed documents; product-wise control ensures right documents",businessBenefit:"Configurable checklist prevents missed documents per product",departments:["Operations","QC"],stage:"Disbursement",isTopDifferentiator:false},
+  {id:40,section:"H",featureName:"QC Maker Verification",esafStatus:"Document review before disbursement",optimStatus:"Document-level decisioning: Approved, Rejected or Remarks per document. Rejected documents auto-route to SO for recapture. Maker-Checker segregation enforced; same user cannot be both Maker and Checker.",optimAdvantage:"Four-eye verification with enforced segregation of duties; system prevents compliance bypass",businessBenefit:"Four-eye verification prevents compliance bypass",departments:["QC"],stage:"QC Maker",isTopDifferentiator:false},
+  {id:41,section:"H",featureName:"QC Checker Verification",esafStatus:"QC review through process workflow",optimStatus:"QC Checker independently validates all QC Maker approved documents. Rejection triggers full rework cycle back to SO then Maker → Checker again. System strictly prevents same user as both roles.",optimAdvantage:"Second level of independent verification creates robust compliance control before disbursement",businessBenefit:"Second-level independent verification before disbursement",departments:["QC"],stage:"QC Checker",isTopDifferentiator:false},
+  {id:42,section:"H",featureName:"Dealer Account Verification",esafStatus:"Disbursement details submitted before final queues",optimStatus:"Dealer name, account holder name, account number, IFSC, bank name and branch details verified before disbursement. Prevents wrong payout to incorrect beneficiary accounts.",optimAdvantage:"Reduces payment failures, reconciliation issues and operational loss",businessBenefit:"Reduces payment failures and operational loss",departments:["Operations"],stage:"Disbursement",isTopDifferentiator:false},
+  {id:43,section:"H",featureName:"Disbursement Amount Validation and Authorization",esafStatus:"Final validation through process checks",optimStatus:"Disbursement Update: amount entered and matched against approved amount; mismatch blocks submission. Auth Done: second user re-enters and verifies amount. Maker-checker compliance enforced at final transaction step.",optimAdvantage:"Strongest financial control before loan booking; dual validation prevents errors and fraud",businessBenefit:"Dual validation prevents transaction errors and fraud",departments:["Operations","QC"],stage:"Disbursement",isTopDifferentiator:false},
+  {id:44,section:"H",featureName:"CBS Integration and Automated Loan Booking",esafStatus:"Loan booking processed after final approvals",optimStatus:"Auto-performs CBS dedupe validation, CIF creation for new customers, Loan Account Number creation and GL processing. No manual intervention. Complete CBS response logs and processing trail maintained.",optimAdvantage:"Fully automated loan booking eliminates manual entry errors and reduces core banking processing time",businessBenefit:"Automated booking eliminates manual errors; reduces processing time",departments:["Operations","IT"],stage:"Disbursement",isTopDifferentiator:false},
+  {id:45,section:"I",featureName:"Re-Look Management for Declined Cases",esafStatus:"Not a visible controlled feature in old flow",optimStatus:"Centralized Re-Look Queue for all declined applications. Authorized user can reopen case; routes back to original rejection stage with same user, all data, documents and history intact. Prevents duplicate application creation.",optimAdvantage:"Recovers viable business without duplicating work; structured second-chance workflow",businessBenefit:"Recovers viable business without duplicate work",departments:["Operations","Management"],stage:"Credit Assessment",isTopDifferentiator:false},
+  {id:46,section:"I",featureName:"Case Re-Assignment Management",esafStatus:"Allocated cases can wait when user unavailable",optimStatus:"Transfer pending cases between users of same role or authorization level. Full reassignment audit trail. Supports business continuity during leave, absence, transfer or workload balancing. Applicable across DD, Credit, QC, Business, ASM stages.",optimAdvantage:"Eliminates processing delays caused by single-user bottlenecks; SLA adherence improves",businessBenefit:"Eliminates single-user bottlenecks; improves SLA adherence",departments:["Operations","Management"],stage:"Due Diligence",isTopDifferentiator:false},
+  {id:47,section:"I",featureName:"Smart Bureau Summary and Risk Intelligence",esafStatus:"Bureau and scorecard reviewed by user interpretation",optimStatus:"Single-screen bureau snapshot with color-coded risk indicators. Negative highlighting: Low CIBIL, Write-Off, Settled, Overdue, DPD, High Utilization, Suit Filed, Restructured, Delinquent, Recent Enquiries, Multiple Active Loans.",optimAdvantage:"Reduces bureau analysis time from minutes to seconds; consistent risk identification",businessBenefit:"Reduces bureau analysis time; consistent risk identification",departments:["Credit"],stage:"Credit Assessment",isTopDifferentiator:false},
+  {id:48,section:"I",featureName:"Real-Time Queue Management",esafStatus:"Multiple queues available in process",optimStatus:"Dedicated queues: My Task, Credit Queue, Business Queue, QC Queue, Duplicate Lead Queue, Re-Look Queue, Approval Queues. Real-time case ownership and status visibility across all roles.",optimAdvantage:"Management gets live pipeline visibility; teams never lose track of case ownership",businessBenefit:"Live pipeline visibility; clear case ownership tracking",departments:["Management","Operations"],stage:"Reporting & MIS",isTopDifferentiator:false},
+  {id:49,section:"I",featureName:"Complete Audit Trail and Compliance Logging",esafStatus:"Approvals and stage actions logged",optimStatus:"Every action logs: User Name, Role, Date and Time, Action Performed, Remarks, Approval/Rejection History. Covers all stages from lead creation to CBS loan booking. Cannot be overridden or modified.",optimAdvantage:"Enterprise-grade compliance documentation; regulator-ready audit trail covering complete lifecycle",businessBenefit:"Regulator-ready audit trail; enterprise-grade compliance",departments:["Risk & Compliance","IT"],stage:"Audit Trail",isTopDifferentiator:false},
+  {id:50,section:"I",featureName:"Query Management Module",esafStatus:"Internal communication through process",optimStatus:"SO can view and respond to queries raised by Credit, Business, CPA or Operations. Upload supporting documents against queries. Track query closure status; eliminates dependency on emails.",optimAdvantage:"Structured internal communication within LOS; reduces query TAT and prevents information gaps",businessBenefit:"Structured communication reduces query TAT and information gaps",departments:["Sales","Operations","Credit"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:51,section:"I",featureName:"System Tools for Field Users",esafStatus:"Productivity tools available",optimStatus:"SO dashboard provides: EMI Calculator, Repayment Calculator, Scheme Information, Policy Documents, Product Guidelines. Accessible from field without leaving the application.",optimAdvantage:"Better-equipped field teams lead to more accurate customer interactions and faster lead conversion",businessBenefit:"Better-equipped field teams; faster lead conversion",departments:["Sales"],stage:"Lead Creation",isTopDifferentiator:false},
+  {id:52,section:"J",featureName:"Geo Limit Management",esafStatus:"Location restrictions through process controls",optimStatus:"Pincode-wise: Serviceable, Negative Area, Blacklisted Area. District and State mapping; Lat/Long validation. Instant activation/deactivation; search and update functionality.",optimAdvantage:"Business controls expansion geography without IT; real-time enforcement prevents restricted sourcing",businessBenefit:"Geography control without IT; real-time restricted location enforcement",departments:["IT","Operations"],stage:"System Configuration",isTopDifferentiator:false},
+  {id:53,section:"J",featureName:"Deviation Master Configuration",esafStatus:"Deviation handling through process setup",optimStatus:"Manual and Auto deviation configuration by product, department, L1–L5 authority hierarchy, loan amount, bureau score, processing fee waiver, insurance waiver, land holding. Auto deviation triggered by configured system rules.",optimAdvantage:"Credit policy codified into system; deviations cannot bypass configured governance",businessBenefit:"Credit policy codified; deviations cannot bypass governance",departments:["IT","Risk & Compliance","Credit"],stage:"System Configuration",isTopDifferentiator:false},
+  {id:54,section:"J",featureName:"Scheme Master Configuration",esafStatus:"Scheme managed through IT/process setup",optimStatus:"Product-wise scheme: validity, loan amount (min/max), processing fee, document charges, ROI, MLR, Policy MLR, tenure, grade, LMS scheme code mapping. Active/inactive status; launch new schemes without code changes.",optimAdvantage:"Business teams launch schemes faster; rate changes happen without development effort",businessBenefit:"Faster scheme launches; rate changes without development",departments:["IT","Business"],stage:"Product Configuration",isTopDifferentiator:false},
+  {id:55,section:"J",featureName:"Branch and Region Master",esafStatus:"Branch configuration through IT setup",optimStatus:"LMS branch code, address, region, cluster, state, district, servicing pincodes, branch manager information, activation/deactivation.",optimAdvantage:"New branch onboarding by business team; no IT dependency for geographic expansion",businessBenefit:"New branch onboarding without IT dependency",departments:["IT","Operations"],stage:"System Configuration",isTopDifferentiator:false},
+  {id:56,section:"J",featureName:"Manufacturer and Model Master",esafStatus:"Asset configuration through IT",optimStatus:"Manufacturer: LMS code, asset category, multi-product category support. Model: manufacturer mapping, variant, segment, HP/body type, risk category, LMS model code.",optimAdvantage:"New asset categories configurable by business; consistent asset-policy mapping across products",businessBenefit:"Configurable asset categories; consistent policy mapping",departments:["IT","Operations"],stage:"System Configuration",isTopDifferentiator:false},
+  {id:57,section:"J",featureName:"Dealer and Dealer Outlet Master",esafStatus:"Dealer management through IT/process",optimStatus:"Dealer: code, PAN validation, address, pincode, region, contact, category, DDSA tagging. Outlet: multiple outlets per dealer, bank account, IFSC, GST, outlet-level servicing and activation.",optimAdvantage:"Supports large dealer networks; outlet-level account management reduces wrong payout risk",businessBenefit:"Large dealer network support; reduces wrong payout risk",departments:["IT","Operations","Sales"],stage:"System Configuration",isTopDifferentiator:false},
+  {id:58,section:"J",featureName:"User Management and Role-Based Access Control",esafStatus:"User setup through IT team",optimStatus:"User creation, department, designation, role, level hierarchy, login credentials, max sanction limit, max LTV, product-wise and screen-wise access. Activity rights for all queues and modules.",optimAdvantage:"Granular security ensures segregation of duties; business adds users without IT involvement",businessBenefit:"Granular security; business adds users without IT",departments:["IT","Management"],stage:"System Configuration",isTopDifferentiator:true},
+  {id:59,section:"J",featureName:"Channel Partner and Vendor Management",esafStatus:"Partner onboarding through IT",optimStatus:"Channel: Direct, DSA, Corporate DSA, BC with FLDG, BC without FLDG; PAN validation, product mapping. Vendor: TVR, RCU, Legal, Technical, Collection, Verification agencies; LMS code, GST, PAN, service charge, login management.",optimAdvantage:"Complete sourcing and third-party ecosystem managed through platform; faster partner onboarding",businessBenefit:"Complete partner ecosystem management; faster onboarding",departments:["IT","Sales","Operations"],stage:"System Configuration",isTopDifferentiator:false},
+  {id:60,section:"J",featureName:"Repo Rate Master",esafStatus:"Interest rate changes through IT",optimStatus:"Floating Repo Rate with effective date management, historical rate maintenance and automatic applicability.",optimAdvantage:"Business updates repo rate changes in real time; automatic pricing keeps offers market-aligned",businessBenefit:"Real-time repo rate updates; market-aligned pricing",departments:["IT","Business","Credit"],stage:"System Configuration",isTopDifferentiator:false},
+  {id:61,section:"K",featureName:"Integrated Income Validation and Financial Assessment Workbench",esafStatus:"Income assessment across multiple screens with limited integrated analysis",optimStatus:"Validate primary/alternate income per applicant, co-applicant, guarantor from single screen. Bureau Summary and Report accessible within workflow. Bureau obligations auto-fetched; exclude irrelevant/closed obligations with justification. FOIR auto-recalculated. Asset vs Liability with Net Worth. Risk and Mitigants section. Exposure module. Banking Validation with AMB and month-wise trend. All data auto-feeds CAM and Credit Memo.",optimAdvantage:"Complete 360-degree financial assessment improving underwriting quality and reducing manual calculations",businessBenefit:"360-degree financial assessment; improved underwriting quality",departments:["Credit"],stage:"Income Validation",isTopDifferentiator:true},
+  {id:62,section:"K",featureName:"Dynamic In-Principle Approval (IPA) with Real-Time Sanction Structuring",esafStatus:"IPA lacked dynamic sanction structuring flexibility",optimStatus:"Credit authority enters any sanction amount within eligible range. Repayment Frequency: Monthly, Quarterly, Half-Yearly. Sanction Tenure modifiable within policy limits. System instantly recalculates LTV, FOIR, EMI for every change. Multiple sanction conditions and remarks captured. All decisions stored in audit trail.",optimAdvantage:"Complete flexibility to structure loan offers while ensuring real-time policy compliance",businessBenefit:"Flexible loan structuring with real-time policy compliance",departments:["Credit"],stage:"Credit Approval",isTopDifferentiator:false},
+  {id:63,section:"K",featureName:"Dynamic Final Credit Approval with Repayment Validation",esafStatus:"Credit approval focused on sanction with limited repayment structuring",optimStatus:"Displays IPA details during final approval. Credit can increase/decrease sanction amount from IPA. Repayment frequency and tenure modifiable. Auto recalculates LTV, FOIR, EMI in real time. Verify/finalize repayment bank account. If account not finalized, routes to SO mobile for customer selection. Supports special conditions and registration-in-favor.",optimAdvantage:"Single-screen credit decisioning significantly reduces TAT with complete auditability",businessBenefit:"Single-screen decisioning reduces TAT with full audit trail",departments:["Credit"],stage:"Credit Approval",isTopDifferentiator:false},
+  {id:64,section:"L",featureName:"FI and TVR Orchestration with Self Assignment, Agency Assignment and Waive Off",esafStatus:"FI and TVR via web portal; limited external agency workflow",optimStatus:"Credit users initiate FI/TVR from credit workflow. Three options: Self Assignment, Waive Off, Assign to Agency. Agency tasks auto-routed. Agencies submit findings through system. Completed evaluations move to External Evaluation Queue. FI, TVR, RCU run simultaneously enabling parallel processing. CAM preparation continues in parallel.",optimAdvantage:"Transforms verification from manual follow-up into intelligent orchestration engine, reducing TAT",businessBenefit:"Intelligent orchestration reduces verification TAT",departments:["FI","TVR","RCU","Credit"],stage:"FI",isTopDifferentiator:true},
+  {id:65,section:"L",featureName:"RCU Agency Assignment and External Evaluation Workflow",esafStatus:"RCU verification primarily internal with limited external visibility",optimStatus:"RCU tasks self-assigned or assigned to empanelled agencies. Individual documents assignable independently. Agencies submit through External Evaluation; case auto-returns to RCU on completion. RCU users can override agency recommendations. Supports Positive, Negative, Screening, Hold, Sample Verification, Fraud outcomes.",optimAdvantage:"Combines external verification scalability with centralized bank-controlled risk decisioning",businessBenefit:"External scalability with bank-controlled risk decisioning",departments:["RCU","Credit"],stage:"RCU",isTopDifferentiator:false},
+  {id:66,section:"L",featureName:"Intelligent Auto-Deviation Triggering Based on Verification Dependency",esafStatus:"Deviations raised manually after verification; no dependency validation",optimStatus:"System tracks completion of FI, TVR, RCU independently. Negative findings don't trigger deviations while dependent verifications pending. Auto-deviation generated only after all related verifications complete. Example: FI=Negative, TVR=Positive, RCU=Pending → Wait. FI=Negative, TVR=Positive, RCU=Positive → Deviation auto-generated.",optimAdvantage:"Ensures accurate risk assessment; eliminates premature decision-making",businessBenefit:"Accurate risk assessment; prevents premature decisions",departments:["Credit","Risk & Compliance"],stage:"Deviation",isTopDifferentiator:true},
+  {id:67,section:"M",featureName:"ProHorizon DigiTech Score Card Engine – Automated Credit Risk Assessment",esafStatus:"Scorecard assessment available; limited automated scoring",optimStatus:"Integrated intelligent underwriting framework with standardized data-driven decisions. Bureau Status for automated bureau decisioning. Profile Credit Endurance Score measures repayment discipline. Profile Total Income Score measures financial strength. Profile Asset Risk Score evaluates asset risk. ProHorizon Consolidated Score combines all dimensions. Final Qualification: Qualified, Review Required, Conditional Approval, High Risk, Declined.",optimAdvantage:"Faster, standardized, consistent lending decisions; reduces dependency on analyst interpretation",businessBenefit:"Standardized lending decisions; less analyst dependency",departments:["Credit"],stage:"Score Card",isTopDifferentiator:true},
+  {id:68,section:"N",featureName:"360-Degree Lead View and Centralized Case Review Workspace",esafStatus:"Information distributed across multiple screens",optimStatus:"Single-screen access to Application Details, Income Validation, Deviation Details, Credit Memo, Documents. Complete customer profile, bureau, asset, sanction, disbursement, charges in one view. Authorized users review complete case without navigating multiple modules.",optimAdvantage:"Enables faster underwriting, audit review, operational verification and management oversight",businessBenefit:"Faster underwriting and audit review from single screen",departments:["Credit","Operations","Management","Risk & Compliance"],stage:"Case Visibility",isTopDifferentiator:true},
+  {id:69,section:"N",featureName:"Categorized Document Repository with Verification Audit Visibility",esafStatus:"Documents in single repository without categorization",optimStatus:"OVD Documents: Aadhaar, PAN, DL, Passport, Voter ID with DD verification status. Scheme Documents: RC Copy, Bank Statement, Insurance Policy with RCU status. Disbursement Documents: Agreement, Hypothecation, Insurance, Mandates with QC status. Additional Documents. System Generated Documents: Sanction Letter, CAM, Welcome Letter, Agreement. Every document displays verification status and remarks.",optimAdvantage:"Improves review efficiency, fraud detection, audit readiness with categorized docs and verification history",businessBenefit:"Improved review efficiency; fraud detection; audit readiness",departments:["Operations","QC","Risk & Compliance"],stage:"Document Management",isTopDifferentiator:true},
+  {id:70,section:"O",featureName:"Geo-Tagged Document Capture with Location Audit Trail",esafStatus:"Limited/no automated geo-tagging of uploaded documents",optimStatus:"Every document captured through mobile app auto geo-tagged. Lat/Long against OVD, Scheme, Disbursement, Pre-Disbursement, FI, TVR, Valuation documents. Location Audit Trail: Lat, Long, Capture Date/Time, User, Role, Device, Upload Source. Confirms document from actual customer location. Identifies suspicious uploads.",optimAdvantage:"Strengthens fraud prevention, field verification authenticity and audit compliance",businessBenefit:"Fraud prevention; field verification authenticity",departments:["FI","TVR","RCU","Operations","Risk & Compliance"],stage:"FI",isTopDifferentiator:true},
+  {id:71,section:"P",featureName:"Stage-Wise and Department-Wise Case History Framework",esafStatus:"Limited single-screen visibility of complete lifecycle history",optimStatus:"Complete case history from lead creation through loan booking from single screen. Separate history: Sales, Due Diligence, FI, TVR, RCU, Credit, Deviation, Business, ASM, Sanction, QC Maker, QC Checker, Disbursement, Auth. Every record captures Activity Name, Previous Status, User, Role, Department, Date/Time, Remarks.",optimAdvantage:"Complete application transparency, faster issue investigation, stronger governance, full audit readiness",businessBenefit:"Complete transparency; faster investigation; audit readiness",departments:["Management","Risk & Compliance"],stage:"Audit Trail",isTopDifferentiator:false},
+  {id:72,section:"P",featureName:"Attempt-Wise Deviation Management and Approval Framework",esafStatus:"Limited visibility of deviation history and approval rationale",optimStatus:"Complete deviation repository with attempt-wise tracking for every re-submission. Business reviews: Policy Value, Requested Value, Deviation %, Approval Matrix, Required Authority Level. Justification-based approval. Historical records preserved. Audit trail: Raised By, Date/Time, Attempt Number, Justification, Approver, Remarks, Status.",optimAdvantage:"Faster, informed business approvals with transparency, governance and audit readiness",businessBenefit:"Informed approvals with transparency and governance",departments:["Business","ASM","Risk & Compliance"],stage:"Deviation",isTopDifferentiator:true},
+  {id:73,section:"Q",featureName:"Zero-Code System Configuration Framework",esafStatus:"Most changes require IT involvement or application updates",optimStatus:"Dynamic Role, Department, Designation, Product, Asset Category, Pincode, Document, Questionnaire configuration. Activity-based role management with screen-level permissions. Negative/Blacklisted Pincode controls. Document Master: OCR-enabled, masking, regex validation. Roles/depts/designations modified without application changes.",optimAdvantage:"Empowers business teams to manage org structure, operational controls and product configurations independently",businessBenefit:"Business manages configuration without IT dependency",departments:["IT","Management"],stage:"System Configuration",isTopDifferentiator:true},
+  {id:74,section:"Q",featureName:"Dynamic Product-Wise Journey Configuration Engine",esafStatus:"Workflow journey fixed; requires IT intervention for changes",optimStatus:"Every loan product has its own independent customer journey configuration. Modules enabled/disabled/reordered per product. Mandatory/Optional settings per stage. Configuration: Mobile Verification, Bureau, eKYC, Loan Details, Score Card, FI, TVR, Application Form, Deal Structure, Sanction Letter, E-NACH, Pre-Disbursement, Custom Modules. Stage completion tracked visually.",optimAdvantage:"Rapid product innovation; launch new products without software development or deployment",businessBenefit:"Rapid product innovation; no deployment needed",departments:["IT","Business","Management"],stage:"Product Configuration",isTopDifferentiator:true},
+  {id:75,section:"Q",featureName:"Dynamic Product-Wise CAM Summary and CAM Overview Configuration",esafStatus:"CAM formats fixed; require development for changes",optimStatus:"Business administrators configure CAM Summary and Overview per product. Every field enabled/disabled through config. CAM Summary: FOIR, Score Card Score, AMB, Bouncing History, LTV, FI/TVR/RCU Status, Valuation, AML, Hunter, Total Exposure. CAM Overview: Bureau Details, Income, Asset, Customer Profile, FI/TVR/Valuation Reports, Viability, Fleet, Risk & Mitigants.",optimAdvantage:"Risk and Business teams control credit memo content; product-specific underwriting views without IT",businessBenefit:"Product-specific underwriting views without IT",departments:["IT","Credit","Management"],stage:"Product Configuration",isTopDifferentiator:true},
+  {id:76,section:"Q",featureName:"Dynamic Questionnaire Builder for Verification Workflows",esafStatus:"Verification questionnaires hardcoded; require development to change",optimStatus:"Questionnaire Master enables business users to create/maintain verification questionnaires. Department-wise: FI, TVR, Valuation, Legal, Technical, Custom. Document-wise mapping. Field types: Yes/No, Text, Numeric, Date Picker, Dropdown, Multi-Select, Remarks, Mandatory, Conditional. Changes immediately available.",optimAdvantage:"Eliminates hardcoded forms; fully configurable engine ensures rapid adaptation to policy changes",businessBenefit:"Configurable verification forms; rapid policy adaptation",departments:["IT","FI","TVR","RCU"],stage:"Product Configuration",isTopDifferentiator:true},
+  {id:77,section:"Q",featureName:"Scheme, Pre-Disbursement and Post-Disbursement Document Mapping",esafStatus:"Document requirements fixed; modifications require significant effort",optimStatus:"Scheme-wise document mapping from centralized Document Master. Different schemes have different document requirements. Dedicated Pre-Disbursement and Post-Disbursement mapping. Documents added/removed through simple selection. Only mapped documents shown. No code changes required.",optimAdvantage:"Business users manage document requirements independently at scheme level; eliminates IT dependency",businessBenefit:"Business manages document requirements per scheme",departments:["IT","Operations"],stage:"Product Configuration",isTopDifferentiator:false},
+  {id:78,section:"Q",featureName:"Bulk Master Upload Framework for Administrative Efficiency",esafStatus:"Master maintenance through individual record creation or limited import",optimStatus:"Centralized bulk import for Branch, Manufacturer, Model, Grid Value & Capping, Deviation, Scheme. Template-driven upload with downloadable templates. Preview before commit; row-level error highlighting. Import actions tracked with user, date, status.",optimAdvantage:"Reduces administrative effort; validated dataset uploads in minutes instead of manual entry",businessBenefit:"Minutes instead of manual entry; validated bulk uploads",departments:["IT","Operations"],stage:"System Configuration",isTopDifferentiator:true},
+  {id:79,section:"R",featureName:"Intelligent Notification and Alert Management Framework",esafStatus:"Limited real-time cross-department alert engine",optimStatus:"Real-time notification engine for all users (planned enhancement). Instant alerts: task assigned, case enters queue, query raised, deviation needs approval, document verification needed. Agency submission notifications. Approval/rejection/TAT breach alerts.",optimAdvantage:"Will significantly improve task execution speed, productivity, and end-to-end TAT",businessBenefit:"Improved task speed and TAT with instant alerts",departments:["IT","Management"],stage:"Future Roadmap",isTopDifferentiator:false},
+  {id:80,section:"R",featureName:"TAT Countdown and SLA Monitoring Engine",esafStatus:"TAT tracking available; no configurable countdown or automated SLA breach alerts",optimStatus:"Configurable TAT management at every workflow stage (planned). Countdown timer starts automatically on queue entry. Stage-wise, user-wise, department-wise TAT tracking. Escalation alerts and breach notifications. SLA dashboard for branch/department monitoring.",optimAdvantage:"Improved operational control, faster processing, reduced pending cases, real-time performance visibility",businessBenefit:"Real-time SLA visibility; reduced pending cases",departments:["IT","Management","Operations"],stage:"Future Roadmap",isTopDifferentiator:false},
+  {id:81,section:"R",featureName:"AI-Powered QC Automation and Advanced OCR Engine",esafStatus:"Document QC through manual maker-checker; no automated intelligence",optimStatus:"Advanced OCR and document intelligence for automated verification (planned). Automated: Name Matching, Aadhaar Verification, PAN Verification, Address Matching, Document Quality, Face Matching, Image Clarity, OCR Data Validation, Duplicate Detection.",optimAdvantage:"Faster QC, reduced manual effort, improved accuracy, lower cost, enhanced fraud detection",businessBenefit:"Faster QC; reduced manual effort; enhanced fraud detection",departments:["IT","QC","Management"],stage:"Future Roadmap",isTopDifferentiator:false},
+  {id:82,section:"R",featureName:"Advanced Business Rule Engine (BRE) for Automated Underwriting",esafStatus:"BRE deviation detection in place; auto-approve/reject not activated",optimStatus:"Fully configurable BRE for automated underwriting (planned): Bureau, Income, Banking, Asset, LTV, FOIR, AML, RCU Rules. Auto Outcomes: Approve, Reject, Refer to Underwriting, Additional Verification, Deviation Required.",optimAdvantage:"Faster credit decisions, reduced manual workload, consistent policy enforcement, better portfolio quality",businessBenefit:"Faster credit decisions; consistent policy enforcement",departments:["IT","Credit","Management"],stage:"Future Roadmap",isTopDifferentiator:false},
+  {id:83,section:"R",featureName:"Mobile-Based TVR Workflow",esafStatus:"TVR through web portal; no mobile TVR available",optimStatus:"Tele Verification fully enabled through mobile (planned). Customer and Reference Verification, Call Outcome Capture, Questionnaire Completion. Geo-Tagging, Time Stamping, Voice Recording, Photo Capture, Digital Remarks.",optimAdvantage:"Faster TVR completion, improved quality, complete audit trail, reduced manual intervention",businessBenefit:"Faster TVR completion; improved quality; audit trail",departments:["IT","TVR"],stage:"Future Roadmap",isTopDifferentiator:false},
+  {id:84,section:"S",featureName:"Real-Time Queue and Pipeline Visibility for Management",esafStatus:"Queue management available; real-time cross-department pipeline reporting limited",optimStatus:"Dedicated queues: My Task, Credit, Business, QC, Duplicate Lead, Re-Look, Approval. Real-time case ownership and status across all roles/departments. Management dashboard with live pipeline and pending action tracking. Case reassignment with audit trail.",optimAdvantage:"Live pipeline visibility with case ownership clarity; proactive TAT management",businessBenefit:"Live pipeline; proactive TAT management",departments:["Management"],stage:"Reporting & MIS",isTopDifferentiator:false},
+  {id:85,section:"S",featureName:"Stakeholder and Role-Specific MIS and Performance Reporting",esafStatus:"MIS available through standard process outputs",optimStatus:"Role-wise dashboards showing only relevant queues/metrics. Audit-ready logs for MIS extraction. Stage-wise and department-wise case counts. Complete deviation/approval/rejection history for portfolio governance reporting.",optimAdvantage:"Data-driven operational management and regulatory reporting with structured role-specific data",businessBenefit:"Data-driven management; regulatory reporting",departments:["Management"],stage:"Reporting & MIS",isTopDifferentiator:false}
+];
+
+const depTabs = ["Sales Team","Credit Team","Business Team","ASM Team","RCU Team","FI Team","TVR Team","Operations Team","QC Team","Management","IT Team","Risk & Compliance"];
+const depMap = {"Sales Team":"Sales","Credit Team":"Credit","Business Team":"Business","ASM Team":"ASM","RCU Team":"RCU","FI Team":"FI","TVR Team":"TVR","Operations Team":"Operations","QC Team":"QC","Management":"Management","IT Team":"IT","Risk & Compliance":"Risk & Compliance"};
+
+const stages = ["Lead Creation","Customer Onboarding","Mobile Verification","Bureau","Score Card","Loan Details","Document Upload","Due Diligence","FI","TVR","RCU","Income Validation","CAM Preparation","Deviation","Business Approval","ASM Approval","Credit Approval","Sanction","E-NACH","QC Maker","QC Checker","Disbursement","CBS Booking"];
+
+const docCategories = ["OVD Documents","Scheme Documents","Pre-Disbursement Documents","Post-Disbursement Documents","Additional Documents","System Generated Documents"];
+
+const configList = ["Roles","Departments","Designations","Products","Schemes","Documents","Questionnaires","Pincode Master","Deviation Rules","Branch Master","Dealer Master","Manufacturer Master","User Management","Bulk Upload","Journey Configuration","CAM Configuration"];
+
+const roadmapItems = [
+  {name:"Notification Engine",desc:"Real-time notification engine for all users across departments",impact:"High",status:"Planned Enhancement"},
+  {name:"TAT Countdown Engine",desc:"Configurable TAT management with countdown timer and SLA monitoring",impact:"High",status:"Planned Enhancement"},
+  {name:"Advanced OCR",desc:"AI-powered document intelligence for automated verification",impact:"High",status:"Planned Enhancement"},
+  {name:"AI Powered QC",desc:"Automated QC with name matching, face matching, document validation",impact:"High",status:"Planned Enhancement"},
+  {name:"BRE Auto Approval",desc:"Automated underwriting decisions through configurable BRE",impact:"High",status:"Planned Enhancement"},
+  {name:"BRE Auto Rejection",desc:"Auto-rejection engine for non-compliant applications",impact:"High",status:"Planned Enhancement"},
+  {name:"Mobile TVR",desc:"Tele Verification fully enabled through mobile applications",impact:"High",status:"Planned Enhancement"},
+  {name:"Mobile Approval Framework",desc:"Complete mobile approval framework for all roles",impact:"High",status:"Planned Enhancement"}
+];
+
+const techData = [
+  {dim:"Application Framework",esaf:"ASPX / legacy stack with limited LTS support",optim:".NET – Modern Microsoft enterprise framework with high performance, security, scalability"},
+  {dim:"Architecture Style",esaf:"Traditional monolithic or semi-modular",optim:"Modern modular architecture supporting independent service scaling and microservices migration"},
+  {dim:"Mobile Technology",esaf:"Limited mobile capabilities; primarily web/desktop",optim:"Mobile-first design for field sourcing, credit approvals, business/ASM decisioning on mobile"},
+  {dim:"API Readiness",esaf:"Integration through existing connectors",optim:"API-first design enabling seamless CBS, bureau, eKYC, NACH, TVR, RCU, FI integrations"},
+  {dim:"Security Architecture",esaf:"Standard authentication controls",optim:"Multi-layer: 2FA OTP, role-based access, screen-level permissions, vault reference, audit trail"},
+  {dim:"Performance",esaf:"Optimized for current load patterns",optim:".NET provides improved runtime performance, lower memory, faster response under concurrent load"},
+  {dim:"Cloud Readiness",esaf:"On-premise oriented",optim:"Cloud-native compatible: Azure, AWS, private cloud deployment"},
+  {dim:"Scalability",esaf:"Scales within existing architecture constraints",optim:"Rapid onboarding of products, branches, dealers, channels through zero-code config"},
+  {dim:"Long-Term Support",esaf:"Dependent on aging stack upgrade path",optim:".NET LTS ensures enterprise-grade support, security patches, future compatibility"},
+  {dim:"Developer Productivity",esaf:"Existing codebase maintenance",optim:"Modern C#, minimal APIs, improved tooling for faster delivery, lower maintenance cost"}
+];
+
+const auditEntries = [
+  {activity:"Lead Created",user:"SO_Rajesh",role:"Sales Officer",date:"10-Jun-2026 09:15 AM",remarks:"New lead created via DSA channel"},
+  {activity:"KYC Completed",user:"SO_Rajesh",role:"Sales Officer",date:"10-Jun-2026 09:45 AM",remarks:"eKYC verified; Vault Ref: V123456"},
+  {activity:"Due Diligence Completed",user:"DD_Priya",role:"DD Officer",date:"10-Jun-2026 11:30 AM",remarks:"All documents verified; Compliance Approved"},
+  {activity:"FI Initiated",user:"Credit_Amit",role:"Credit Manager",date:"10-Jun-2026 12:00 PM",remarks:"FI assigned to agency – ProVerify"},
+  {activity:"FI Report Submitted",user:"Agency_Vendor",role:"FI Agency",date:"11-Jun-2026 10:00 AM",remarks:"Property valuation complete; Market Value: ₹12,50,000"},
+  {activity:"CAM Prepared",user:"CAM_Maker",role:"Credit Analyst",date:"11-Jun-2026 02:00 PM",remarks:"CAM auto-generated from system data"},
+  {activity:"Deviation Detected - LTV Breach",user:"SYSTEM",role:"BRE Engine",date:"11-Jun-2026 02:05 PM",remarks:"LTV exceeds policy threshold; auto-deviation raised"},
+  {activity:"ASM Approved",user:"ASM_Vikram",role:"ASM",date:"12-Jun-2026 09:30 AM",remarks:"Deviation approved; customer retention justification"},
+  {activity:"Business Approved",user:"Biz_Sunita",role:"Business Head",date:"12-Jun-2026 11:00 AM",remarks:"Final deviation approval granted"},
+  {activity:"Sanction Letter Generated",user:"SYSTEM",role:"System",date:"12-Jun-2026 11:30 AM",remarks:"Sanction Letter PDF auto-generated"},
+  {activity:"QC Maker Verified",user:"QC_Ravi",role:"QC Maker",date:"12-Jun-2026 02:00 PM",remarks:"All pre-disbursement documents verified"},
+  {activity:"QC Checker Verified",user:"QC_Anita",role:"QC Checker",date:"12-Jun-2026 03:00 PM",remarks:"Independent verification completed; all checks passed"},
+  {activity:"Disbursement Authorized",user:"Ops_Suresh",role:"Operations",date:"12-Jun-2026 04:00 PM",remarks:"Amount matched; Auth Done completed"},
+  {activity:"Loan Booked in CBS",user:"SYSTEM",role:"CBS Integration",date:"12-Jun-2026 04:05 PM",remarks:"CIF created; Loan Account: LOBH00012345"},
+  {activity:"Documents Downloaded by SO",user:"SO_Rajesh",role:"Sales Officer",date:"12-Jun-2026 05:00 PM",remarks:"Sanction Letter and Welcome Letter downloaded on mobile"}
+];
+
+let currentDept = null;
+let currentStage = null;
+let currentDocCat = null;
+
+function renderSummaryCards(){
+  const total = features.length;
+  const optimAdv = features.filter(f=>f.optimAdvantage && f.optimAdvantage.length>0).length;
+  const depts = new Set(); features.forEach(f=>f.departments.forEach(d=>depts.add(d)));
+  const autoFeatures = features.filter(f=>f.optimStatus.toLowerCase().includes('auto')).length;
+  const mobileFeatures = features.filter(f=>f.optimStatus.toLowerCase().includes('mobile')).length;
+  const zeroCodeFeatures = features.filter(f=>f.optimStatus.toLowerCase().includes('zero')||f.optimStatus.toLowerCase().includes('config')||f.featureName.toLowerCase().includes('zero')).length;
+  const complianceFeatures = features.filter(f=>f.departments.includes('Risk & Compliance')).length;
+  const roadmap = features.filter(f=>f.stage==='Future Roadmap').length;
+  const actions = [
+    ()=>{currentDept=null;currentStage=null;activePredicate=null;document.getElementById('searchInput').value='';renderDeptTabs();renderStageJourney();applyFilters();setTimeout(()=>document.getElementById('featureCards').scrollIntoView({behavior:'smooth',block:'start'}),100)},
+    ()=>{currentDept=null;currentStage=null;activePredicate=null;document.getElementById('searchInput').value='';renderDeptTabs();renderStageJourney();applyFilters(f=>f.optimAdvantage&&f.optimAdvantage.length>0);setTimeout(()=>document.getElementById('featureCards').scrollIntoView({behavior:'smooth',block:'start'}),100)},
+    ()=>{currentDept=null;currentStage=null;activePredicate=null;renderDeptTabs();renderStageJourney();setTimeout(()=>document.getElementById('deptTabs').scrollIntoView({behavior:'smooth',block:'start'}),100)},
+    ()=>{currentDept=null;currentStage=null;activePredicate=null;document.getElementById('searchInput').value='';renderDeptTabs();renderStageJourney();applyFilters(f=>f.optimStatus.toLowerCase().includes('auto'));setTimeout(()=>document.getElementById('featureCards').scrollIntoView({behavior:'smooth',block:'start'}),100)},
+    ()=>{currentDept=null;currentStage=null;activePredicate=null;document.getElementById('searchInput').value='';renderDeptTabs();renderStageJourney();applyFilters(f=>f.optimStatus.toLowerCase().includes('mobile'));setTimeout(()=>document.getElementById('featureCards').scrollIntoView({behavior:'smooth',block:'start'}),100)},
+    ()=>{currentDept=null;currentStage=null;activePredicate=null;document.getElementById('searchInput').value='';renderDeptTabs();renderStageJourney();applyFilters(f=>f.optimStatus.toLowerCase().includes('zero')||f.optimStatus.toLowerCase().includes('config')||f.featureName.toLowerCase().includes('zero'));setTimeout(()=>document.getElementById('featureCards').scrollIntoView({behavior:'smooth',block:'start'}),100)},
+    ()=>{currentDept=null;currentStage=null;activePredicate=null;document.getElementById('searchInput').value='';renderDeptTabs();renderStageJourney();applyFilters(f=>f.departments.includes('Risk & Compliance'));setTimeout(()=>document.getElementById('featureCards').scrollIntoView({behavior:'smooth',block:'start'}),100)},
+    ()=>showSection('roadmap')
+  ];
+  const cardData = [
+    {label:"Total Comparison Points",value:total,icon:"bi-list-check",gradient:["#6366f1","#4f46e5"]},
+    {label:"OPTIM Advantages",value:optimAdv,icon:"bi-trophy",gradient:["#16a34a","#15803d"]},
+    {label:"Departments Covered",value:depts.size,icon:"bi-people",gradient:["#2563eb","#1d4ed8"]},
+    {label:"Automation Features",value:autoFeatures,icon:"bi-gear-wide-connected",gradient:["#d97706","#b45309"]},
+    {label:"Mobile Features",value:mobileFeatures,icon:"bi-phone",gradient:["#7c3aed","#6d28d9"]},
+    {label:"Zero Code Features",value:zeroCodeFeatures,icon:"bi-code-slash",gradient:["#0891b2","#0e7490"]},
+    {label:"Compliance Features",value:complianceFeatures,icon:"bi-shield-check",gradient:["#dc2626","#b91c1c"]},
+    {label:"Future Roadmap",value:roadmap,icon:"bi-rocket-takeoff",gradient:["#0f172a","#1e293b"]}
+  ];
+  document.getElementById('summaryCards').innerHTML = cardData.map((c,i)=>`
+    <div class="summary-card" data-card="${i}" style="background:linear-gradient(135deg,${c.gradient[0]},${c.gradient[1]})">
+      <div class="flex items-center justify-between mb-3">
+        <i class="bi ${c.icon} text-2xl opacity-80"></i>
+      </div>
+      <div class="count-up">${c.value}</div>
+      <div class="text-xs opacity-80 mt-1">${c.label}</div>
+    </div>
+  `).join('');
+  document.getElementById('summaryCards').addEventListener('click',function(e){
+    const card = e.target.closest('.summary-card');
+    if(card&&card.dataset.card!==undefined) actions[parseInt(card.dataset.card)]();
+  });
+}
+
+function renderDeptTabs(){
+  document.getElementById('deptTabs').innerHTML = `<div class="dept-tab ${!currentDept?'active':''}" onclick="filterByDept(null)">All Departments</div>` +
+    depTabs.map(d=>`<div class="dept-tab ${currentDept===d?'active':''}" onclick="filterByDept('${d}')">${d}</div>`).join('');
+}
+
+function renderStageJourney(){
+  document.getElementById('stageJourney').innerHTML = stages.map((s,i)=>`
+    <div class="flex flex-col items-center" style="min-width:60px">
+      <div class="stage-node ${currentStage===s?'active':''}" onclick="filterByStage('${s}')" title="${s}">${i+1}</div>
+      <div class="stage-label" onclick="filterByStage('${s}')">${s}</div>
+    </div>
+    ${i<stages.length-1?`<div class="stage-connector ${false?'active':''}" style="flex:1;min-width:12px"></div>`:''}
+  `).join('');
+}
+
+function renderFeatureCards(filterArr){
+  const arr = filterArr || features;
+  let label = '';
+  if(activePredicate) label = ' | Filtered View';
+  else if(currentDept) label = ` | ${currentDept}`;
+  else if(currentStage) label = ` | Stage: ${currentStage}`;
+  document.getElementById('featureCount').textContent = `Showing ${arr.length} of ${features.length} features${label}`;
+  document.getElementById('featureCards').innerHTML = arr.map(f=>buildFeatureCard(f)).join('');
+}
+
+function renderDifferentiators(){
+  const diffs = features.filter(f=>f.isTopDifferentiator);
+  document.getElementById('differentiators').innerHTML = diffs.map(f=>`
+    <div class="feature-card p-4 anim-fade border-l-4" style="border-left-color:#f59e0b">
+      <div class="flex items-start justify-between mb-2">
+        <h3 class="font-semibold text-sm text-gray-800 flex-1">${f.featureName}</h3>
+        <span class="badge-diff whitespace-nowrap"><i class="bi bi-star-fill text-amber-500 text-[9px] mr-1"></i>TOP DIFF</span>
+      </div>
+      <div class="mb-2">
+        <div class="badge-esaf inline-block mb-1">ESAF: ${f.esafStatus.substring(0,60)}${f.esafStatus.length>60?'...':''}</div>
+        <div class="badge-optim inline-block mb-1">OPTIM: ${f.optimStatus.substring(0,60)}${f.optimStatus.length>60?'...':''}</div>
+      </div>
+      <p class="text-xs text-amber-700 bg-amber-50 p-2 rounded-lg mb-1"><i class="bi bi-lightning-charge-fill mr-1"></i>${f.optimAdvantage}</p>
+      <p class="text-xs text-blue-700 bg-blue-50 p-2 rounded-lg"><i class="bi bi-graph-up-arrow mr-1"></i>${f.businessBenefit}</p>
+    </div>
+  `).join('');
+}
+
+function buildFeatureCard(f){
+  return `<div class="feature-card p-4 anim-fade">
+    <div class="flex items-start justify-between mb-2">
+      <div>
+        <span class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded">Section ${f.section} | #${f.id}</span>
+        ${f.isTopDifferentiator?'<span class="badge-diff ml-1"><i class="bi bi-star-fill text-amber-500 text-[9px] mr-1"></i>TOP DIFF</span>':''}
+      </div>
+    </div>
+    <h3 class="font-semibold text-sm text-gray-800 mb-2">${f.featureName}</h3>
+    <div class="space-y-2 mb-2">
+      <div class="badge-esaf block"><i class="bi bi-x-circle-fill text-red-400 text-[10px] mr-1"></i>${f.esafStatus}</div>
+      <div class="badge-optim block"><i class="bi bi-check-circle-fill text-green-400 text-[10px] mr-1"></i>${f.optimStatus}</div>
+    </div>
+    <div class="bg-amber-50 border border-amber-100 rounded-lg p-2 mb-2">
+      <p class="text-[11px] text-amber-800 font-medium"><i class="bi bi-lightning-charge-fill text-amber-500 mr-1"></i>${f.optimAdvantage}</p>
+    </div>
+    <div class="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-2">
+      <p class="text-[11px] text-blue-800 font-medium"><i class="bi bi-graph-up-arrow text-blue-500 mr-1"></i>${f.businessBenefit}</p>
+    </div>
+    <div class="flex flex-wrap gap-1 mt-2">
+      ${f.departments.map(d=>`<span class="text-[9px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">${d}</span>`).join('')}
+      <span class="text-[9px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">${f.stage}</span>
+    </div>
+  </div>`;
+}
+
+function renderSectionCards(sectionId, filterFn){
+  const el = document.getElementById(sectionId);
+  if(!el) return;
+  const arr = filterFn ? features.filter(filterFn) : [];
+  el.innerHTML = arr.map(f=>buildFeatureCard(f)).join('');
+}
+
+function renderAllSections(){
+  const mapping = {
+    techCards: f=>f.section==="A"||f.featureName.toLowerCase().includes("technology")||f.featureName.toLowerCase().includes("framework"),
+    onboardingCards: f=>f.section==="B"||f.stage==="Lead Creation"||f.stage==="Customer Onboarding",
+    ddCards: f=>f.section==="D"||f.stage==="Due Diligence",
+    fiCards: f=>f.section==="A"&&f.id===4||f.section==="L"&&f.id===64||f.section==="O"&&f.id===70||f.stage==="FI",
+    tvrCards: f=>f.section==="L"&&f.id===64||f.stage==="TVR"||f.id===83,
+    rcuCards: f=>f.section==="L"&&f.id===65||f.stage==="RCU",
+    creditCards: f=>(f.section==="E"||f.section==="K"||f.section==="M")&&f.stage!=="Credit Approval"||f.stage==="Credit Assessment"||f.stage==="Score Card",
+    incomeCards: f=>f.stage==="Income Validation"||f.id===61,
+    scoreCards: f=>f.stage==="Score Card"||f.id===67,
+    deviationCards: f=>f.stage==="Deviation"||f.section==="F"||f.id===22||f.id===23||f.id===28||f.id===29||f.id===32||f.id===53||f.id===66||f.id===72,
+    bizCards: f=>f.stage==="Business Approval"||f.section==="F",
+    asmCards: f=>f.stage==="ASM Approval"||f.id===30,
+    creditApprovalCards: f=>f.stage==="Credit Approval"||f.id===25||f.id===26||f.id===27||f.id===62||f.id===63,
+    sanctionCards: f=>f.section==="G"||f.stage==="Sanction",
+    qcMakerCards: f=>f.stage==="QC Maker"||f.id===40,
+    qcCheckerCards: f=>f.stage==="QC Checker"||f.id===41,
+    disburseCards: f=>f.stage==="Disbursement"||f.section==="H",
+    docCards: f=>f.stage==="Document Management"||f.id===69,
+    visibilityCards: f=>f.stage==="Case Visibility"||f.id===68,
+    auditCards: f=>f.stage==="Audit Trail"||f.id===49||f.id===71,
+    sysConfigCards: f=>f.section==="J"||f.stage==="System Configuration",
+    productConfigCards: f=>f.stage==="Product Configuration"||f.section==="Q",
+    misCards: f=>f.stage==="Reporting & MIS"||f.id===84||f.id===85
+  };
+  Object.entries(mapping).forEach(([id,fn])=>renderSectionCards(id,fn));
+}
+
+function renderTechSection(){
+  document.getElementById('techCards').innerHTML = techData.map(t=>`
+    <div class="feature-card p-5 anim-fade">
+      <h3 class="font-semibold text-gray-800 mb-3 text-sm">${t.dim}</h3>
+      <div class="space-y-3">
+        <div class="bg-red-50 border border-red-100 rounded-lg p-3">
+          <div class="text-[10px] font-bold text-red-600 uppercase mb-1">ESAF Existing</div>
+          <p class="text-xs text-red-800">${t.esaf}</p>
+        </div>
+        <div class="bg-green-50 border border-green-100 rounded-lg p-3">
+          <div class="text-[10px] font-bold text-green-600 uppercase mb-1">OPTIM .NET</div>
+          <p class="text-xs text-green-800">${t.optim}</p>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDocCategories(){
+  document.getElementById('docCategories').innerHTML = `<div class="doc-cat ${!currentDocCat?'active':''}" onclick="filterDocCat(null)">All Categories</div>` +
+    docCategories.map(d=>`<div class="doc-cat ${currentDocCat===d?'active':''}" onclick="filterDocCat('${d}')">${d}</div>`).join('');
+}
+
+function renderDocCards(){
+  const docData = [
+    {cat:"OVD Documents",docs:["Aadhaar Card (eKYC verified)","PAN Card","Driving Licence","Passport","Voter ID"],status:"Due Diligence Verified"},
+    {cat:"Scheme Documents",docs:["RC Copy","Bank Statement (3 months)","Insurance Policy","Quotation","Invoice"],status:"RCU Verified"},
+    {cat:"Pre-Disbursement Documents",docs:["Loan Agreement","Demand Promissory Note","Hypothecation Agreement","Insurance Cover Note","ECS/NACH Mandate"],status:"QC Verified"},
+    {cat:"Post-Disbursement Documents",docs:["Post-Dated Cheques","Security Cheque","Delivery Confirmation","RC Endorsement"],status:"Pending Collection"},
+    {cat:"Additional Documents",docs:["Income Proof","Business Address Proof","Salary Slips","IT Returns","Bank Passbook"],status:"Credit Requested"},
+    {cat:"System Generated Documents",docs:["Loan Application Form (PDF)","Sanction Letter (PDF)","Key Fact Statement (PDF)","Welcome Letter (PDF)","Delivery Order (PDF)","Credit Appraisal Memo (PDF)"],status:"Auto Generated"}
+  ];
+  const arr = currentDocCat ? docData.filter(d=>d.cat===currentDocCat) : docData;
+  document.getElementById('docCards').innerHTML = arr.map(d=>`
+    <div class="feature-card p-4 anim-fade">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="bi bi-folder-fill text-indigo-500"></i>
+        <h3 class="font-semibold text-sm text-gray-800">${d.cat}</h3>
+      </div>
+      <span class="badge-optim text-[10px] mb-3 inline-block">${d.status}</span>
+      <ul class="space-y-1.5 mt-2">
+        ${d.docs.map(doc=>`<li class="text-xs text-gray-600 flex items-center gap-2"><i class="bi bi-file-text text-indigo-400 text-[10px]"></i>${doc}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+}
+
+function renderCaseHistory(){
+  const entries = [
+    {stage:"Sales History",status:"completed",desc:"Lead created, KYC done, documents uploaded"},
+    {stage:"Due Diligence History",status:"completed",desc:"All documents verified; no compliance issues"},
+    {stage:"FI History",status:"completed",desc:"FI assigned, report submitted, evaluation completed"},
+    {stage:"TVR History",status:"completed",desc:"Tele verification completed; customer confirmed"},
+    {stage:"RCU History",status:"completed",desc:"Document verification completed; no adverse findings"},
+    {stage:"Credit History",status:"completed",desc:"CAM prepared, income validated, score card evaluated"},
+    {stage:"Deviation History",status:"completed",desc:"LTV deviation detected; approved by ASM & Business"},
+    {stage:"Business Approval History",status:"completed",desc:"Deal structure approved; deviation waiver granted"},
+    {stage:"ASM History",status:"completed",desc:"Case reviewed; recommendation submitted"},
+    {stage:"QC History",status:"completed",desc:"QC Maker & Checker verified all documents"},
+    {stage:"Disbursement History",status:"completed",desc:"Amount validated; authorized; CBS booking done"},
+    {stage:"Authorization History",status:"completed",desc:"Auth Done completed; loan disbursed"}
+  ];
+  document.getElementById('caseHistoryTimeline').innerHTML = entries.map((e,i)=>`
+    <div class="flex items-start gap-4 anim-fade" style="animation-delay:${i*0.05}s">
+      <div class="flex flex-col items-center">
+        <div class="timeline-dot completed"></div>
+        ${i<entries.length-1?'<div class="w-0.5 h-8 bg-indigo-200"></div>':''}
+      </div>
+      <div class="flex-1 glass rounded-xl p-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-semibold text-gray-800">${e.stage}</h4>
+          <span class="text-[10px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium"><i class="bi bi-check-circle-fill text-[9px] mr-1"></i>Completed</span>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">${e.desc}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAuditTable(){
+  document.getElementById('auditBody').innerHTML = auditEntries.map(e=>`
+    <tr class="text-xs text-gray-600 hover:bg-gray-50 transition">
+      <td class="py-2.5 pr-4 font-medium text-gray-800">${e.activity}</td>
+      <td class="py-2.5 pr-4">${e.user}</td>
+      <td class="py-2.5 pr-4">${e.role}</td>
+      <td class="py-2.5 pr-4">${e.date}</td>
+      <td class="py-2.5">${e.remarks}</td>
+    </tr>
+  `).join('');
+}
+
+function renderConfigItems(){
+  document.getElementById('configItems').innerHTML = configList.map(c=>`
+    <div class="config-item flex items-center gap-3">
+      <i class="bi bi-gear-wide-connected"></i>
+      <span>${c}</span>
+    </div>
+  `).join('');
+}
+
+function renderRoadmap(){
+  document.getElementById('roadmapCards').innerHTML = roadmapItems.map(r=>`
+    <div class="roadmap-card anim-fade">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-indigo-50 flex items-center justify-center">
+          <i class="bi bi-rocket-takeoff text-indigo-600 text-lg"></i>
+        </div>
+        <div>
+          <h3 class="font-semibold text-sm text-gray-800">${r.name}</h3>
+          <span class="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">${r.status}</span>
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 mb-3">${r.desc}</p>
+      <div class="flex items-center justify-between text-xs">
+        <span class="font-semibold text-indigo-600">Business Impact:</span>
+        <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">${r.impact}</span>
+      </div>
+      <div class="mt-3 bg-gray-100 rounded-full h-1.5">
+        <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-1.5 rounded-full" style="width:${Math.floor(Math.random()*20+10)}%"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterByDept(dept){
+  currentDept = dept;
+  currentStage = null;
+  activePredicate = null;
+  renderDeptTabs();
+  renderStageJourney();
+  applyFilters();
+}
+
+function filterByStage(stage){
+  currentStage = stage;
+  currentDept = null;
+  activePredicate = null;
+  renderDeptTabs();
+  renderStageJourney();
+  applyFilters();
+}
+
+function filterDocCat(cat){
+  currentDocCat = cat;
+  renderDocCategories();
+  renderDocCards();
+}
+
+let activePredicate = null;
+
+function applyFilters(predicate){
+  let arr = [...features];
+  if(predicate) activePredicate = predicate;
+  if(activePredicate) arr = arr.filter(activePredicate);
+  if(currentDept){
+    const mapped = depMap[currentDept];
+    arr = arr.filter(f=>f.departments.includes(mapped));
+  }
+  if(currentStage){
+    arr = arr.filter(f=>f.stage===currentStage);
+  }
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  if(q){
+    arr = arr.filter(f=>
+      f.featureName.toLowerCase().includes(q)||
+      f.departments.some(d=>d.toLowerCase().includes(q))||
+      f.stage.toLowerCase().includes(q)||
+      f.optimAdvantage.toLowerCase().includes(q)||
+      f.businessBenefit.toLowerCase().includes(q)
+    );
+  }
+  renderFeatureCards(arr);
+  renderDifferentiators();
+}
+
+function filterFeatures(){
+  applyFilters();
+}
+
+function showSection(sectionId){
+  document.querySelectorAll('.content-section').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const sec = document.getElementById('section-'+sectionId);
+  if(sec) sec.classList.add('active');
+  const nav = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+  if(nav) nav.classList.add('active');
+  if(window.innerWidth<1024) document.getElementById('sidebar').classList.remove('open');
+}
+
+document.getElementById('sidebarNav').addEventListener('click',function(e){
+  const item = e.target.closest('.nav-item');
+  if(item) showSection(item.dataset.section);
+});
+
+function exportPDF(){
+  window.print();
+  showToast('Print dialog opened. Save as PDF from print settings.','#6366f1');
+}
+
+function exportPrint(){
+  window.print();
+}
+
+function exportExcel(){
+  let csv = "ID,Section,Feature Name,ESAF Status,OPTIM Status,OPTIM Advantage,Business Benefit,Departments,Stage\n";
+  features.forEach(f=>{
+    csv += `${f.id},"${f.section}","${f.featureName.replace(/"/g,'""')}","${f.esafStatus.replace(/"/g,'""')}","${f.optimStatus.replace(/"/g,'""')}","${f.optimAdvantage.replace(/"/g,'""')}","${f.businessBenefit.replace(/"/g,'""')}","${f.departments.join('; ')}","${f.stage}"\n`;
+  });
+  const blob = new Blob(["\uFEFF"+csv],{type:'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'ESAF_vs_OPTIM_Comparison.csv';
+  link.click();
+  showToast('CSV file downloaded successfully.','#16a34a');
+}
+
+function showToast(msg,color){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+renderSummaryCards();
+renderDeptTabs();
+renderStageJourney();
+renderFeatureCards(features);
+renderDifferentiators();
+renderAllSections();
+renderTechSection();
+renderDocCategories();
+renderDocCards();
+renderCaseHistory();
+renderAuditTable();
+renderConfigItems();
+renderRoadmap();
+</script>
+</body>
+</html>
