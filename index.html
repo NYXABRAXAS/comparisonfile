@@ -109,6 +109,7 @@
     <div class="nav-item" data-section="scorecard"><i class="bi bi-file-spreadsheet text-sm"></i>Score Card</div>
     <div class="nav-item" data-section="deviation"><i class="bi bi-exclamation-triangle text-sm"></i>Deviation Management</div>
     <div class="nav-item" data-section="businessapproval"><i class="bi bi-briefcase text-sm"></i>Business Approval</div>
+    <div class="nav-item" data-section="dealstructure"><i class="bi bi-layers text-sm"></i>Deal Structure</div>
     <div class="nav-item" data-section="asmapproval"><i class="bi bi-person-check text-sm"></i>ASM Approval</div>
     <div class="nav-item" data-section="creditapproval"><i class="bi bi-check2-circle text-sm"></i>Credit Approval</div>
     <div class="nav-item" data-section="sanction"><i class="bi bi-file-text text-sm"></i>Sanction</div>
@@ -198,6 +199,7 @@
     <div class="content-section" id="section-scorecard"><h2 class="section-header mb-6">Score Card</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="scoreCards"></div></div>
     <div class="content-section" id="section-deviation"><h2 class="section-header mb-6">Deviation Management</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="deviationCards"></div></div>
     <div class="content-section" id="section-businessapproval"><h2 class="section-header mb-6">Business Approval</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="bizCards"></div></div>
+    <div class="content-section" id="section-dealstructure"><h2 class="section-header mb-6">Deal Structure</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="dealcCards"></div></div>
     <div class="content-section" id="section-asmapproval"><h2 class="section-header mb-6">ASM Approval</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="asmCards"></div></div>
     <div class="content-section" id="section-creditapproval"><h2 class="section-header mb-6">Credit Approval</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="creditApprovalCards"></div></div>
     <div class="content-section" id="section-sanction"><h2 class="section-header mb-6">Sanction</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="sanctionCards"></div></div>
@@ -213,10 +215,6 @@
 
     <div class="content-section" id="section-visibility">
       <h2 class="section-header mb-6">Case Visibility &amp; 360-Degree View</h2>
-      <div class="glass rounded-2xl p-6 mb-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">Case History Timeline</h3>
-        <div class="space-y-3" id="caseHistoryTimeline"></div>
-      </div>
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="visibilityCards"></div>
     </div>
 
@@ -298,7 +296,7 @@ const features = [
   {id:34,section:"G",featureName:"Sanction Letter Stage with eKYC Gate",esafStatus:"Sanction letter stage follows eKYC requirement",optimStatus:"eKYC status validated before Sanction stage opens; eKYC pending = processing blocked. Aadhaar OTP-based eKYC: consent, language, OTP, demographic fetching. Vault Reference Number generated on completion.",optimAdvantage:"Mandatory compliance gate ensures no loan proceeds to sanction without verified identity",businessBenefit:"Mandatory compliance gate; no loan without verified identity",departments:["Operations","Risk & Compliance"],stage:"Sanction",isTopDifferentiator:false},
   {id:35,section:"G",featureName:"First EMI Date and BPI Calculation",esafStatus:"EMI date selection in sanction stage",optimStatus:"First EMI Date selectable from available schedule options. Auto-calculates: EMI Amount, Repayment Schedule, Loan Maturity Date, Installment Structure. Broken Period Interest (BPI) auto-calculated based on disbursement and first EMI date.",optimAdvantage:"Eliminates manual BPI calculation errors; accurate repayment schedules instantly",businessBenefit:"Eliminates manual BPI errors; instant accurate repayment schedules",departments:["Operations","Credit"],stage:"Sanction",isTopDifferentiator:false},
   {id:36,section:"G",featureName:"Auto-Generated Loan Documents",esafStatus:"Documents prepared through stage process",optimStatus:"Application Form PDF at Due Diligence completion. Sanction Letter PDF and KFS at Sanction stage. Welcome Letter and Delivery Order at Auth Done. CAM PDF at Loan Booking. All documents available for mobile download by SO.",optimAdvantage:"Zero manual document preparation; standardized regulatory-compliant output at every milestone",businessBenefit:"Zero manual document prep; regulatory-compliant output at every milestone",departments:["Operations"],stage:"Sanction",isTopDifferentiator:false},
-  {id:37,section:"H",featureName:"E-NACH Mandate Registration",esafStatus:"NACH handled after sanction completion",optimStatus:"Auto-fetches loan parameters: customer details, loan amount, EMI, repayment frequency, tenure, first EMI date, repayment account. Mandate lifecycle tracking: Initiated, Pending Auth, Submitted, Processing, Approved, Rejected, Failed. Real-time bank response tracking.",optimAdvantage:"End-to-end mandate visibility; early failure detection prevents disbursement delays",businessBenefit:"End-to-end mandate visibility; early failure detection",departments:["Operations"],stage:"Customer Onboarding",isTopDifferentiator:false},
+  {id:37,section:"H",featureName:"E-NACH Mandate Registration",esafStatus:"NACH handled after sanction completion",optimStatus:"Auto-fetches loan parameters: customer details, loan amount, EMI, repayment frequency, tenure, first EMI date, repayment account. Mandate lifecycle tracking: Initiated, Pending Auth, Submitted, Processing, Approved, Rejected, Failed. Real-time bank response tracking.",optimAdvantage:"End-to-end mandate visibility; early failure detection prevents disbursement delays",businessBenefit:"End-to-end mandate visibility; early failure detection",departments:["Operations"],stage:"Disbursement",isTopDifferentiator:false},
   {id:38,section:"H",featureName:"Dealer Account Verification",esafStatus:"Disbursement details submitted before final queues",optimStatus:"Dealer name, account holder name, account number, IFSC, bank name and branch details verified before disbursement. Prevents wrong payout to incorrect beneficiary accounts.",optimAdvantage:"Reduces payment failures, reconciliation issues and operational loss",businessBenefit:"Reduces payment failures and operational loss",departments:["Operations"],stage:"Disbursement",isTopDifferentiator:false},
   {id:39,section:"H",featureName:"Nominee Details Capture",esafStatus:"Nominee information collected in process",optimStatus:"Structured capture: nominee name, relationship, DOB, gender, mobile, address. Guardian information for minor nominees. Mandatory validation before stage progression.",optimAdvantage:"Compliance-ready nominee records reduce servicing gaps and regulatory audit risk",businessBenefit:"Compliance-ready records reduce audit risk",departments:["Operations","Risk & Compliance"],stage:"Disbursement",isTopDifferentiator:false},
   {id:40,section:"H",featureName:"Pre-Disbursement Document Upload and Checklist",esafStatus:"Final documents verified before disbursement",optimStatus:"Configurable product-wise pre-disbursement document checklist. Supports: PDF, single image, multiple image uploads. Mandatory document validation before case progression to QC.",optimAdvantage:"Configurable checklist eliminates missed documents; product-wise control ensures right documents",businessBenefit:"Configurable checklist prevents missed documents per product",departments:["Operations","QC"],stage:"Disbursement",isTopDifferentiator:false},
@@ -354,7 +352,7 @@ const depMap = {"Sales Team":"Sales","Credit Team":"Credit","Business Team":"Bus
 
 const stages = ["Lead Creation","Customer Onboarding","Mobile Verification","Bureau","Score Card","Loan Details","Document Upload","Due Diligence","FI","TVR","RCU","Income Validation","CAM Preparation","Deviation","Business Approval","ASM Approval","Credit Approval","Sanction","E-NACH","QC Maker","QC Checker","Disbursement","CBS Booking"];
 
-const docCategories = ["OVD Documents","Scheme Documents","Pre-Disbursement Documents","Post-Disbursement Documents","Additional Documents","System Generated Documents"];
+const docCategories = ["OVD Documents","Scheme Documents","Pre-Disbursement Documents","Additional Documents","System Generated Documents"];
 
 const configList = ["Roles","Departments","Designations","Products","Schemes","Documents","Questionnaires","Pincode Master","Deviation Rules","Branch Master","Dealer Master","Manufacturer Master","User Management","Bulk Upload","Journey Configuration","CAM Configuration"];
 
@@ -532,11 +530,12 @@ function renderAllSections(){
     fiCards: f=>f.section==="A"&&f.id===4||f.section==="L"&&f.id===64||f.section==="O"&&f.id===70||f.stage==="FI",
     tvrCards: f=>f.section==="L"&&f.id===64||f.stage==="TVR"||f.id===83,
     rcuCards: f=>f.section==="L"&&f.id===65||f.stage==="RCU",
-    creditCards: f=>((f.section==="E"||f.section==="K"||f.section==="M")&&f.stage!=="Credit Approval"||f.stage==="Credit Assessment"||f.stage==="Score Card")&&f.id!==45,
+    creditCards: f=>(((f.section==="E"||f.section==="K"||f.section==="M")&&f.stage!=="Credit Approval"||f.stage==="Credit Assessment"||f.stage==="Score Card")&&f.id!==45)||f.id===61,
     incomeCards: f=>f.stage==="Income Validation"||f.id===61,
     scoreCards: f=>f.stage==="Score Card"||f.id===67,
     deviationCards: f=>f.stage==="Deviation"||f.section==="F"||f.id===22||f.id===23||f.id===28||f.id===29||f.id===32||f.id===53||f.id===66||f.id===72,
     bizCards: f=>f.stage==="Business Approval"||f.section==="F",
+    dealcCards: f=>f.id===28,
     asmCards: f=>f.stage==="ASM Approval"||f.id===30,
     creditApprovalCards: f=>f.stage==="Credit Approval"||f.id===25||f.id===26||f.id===27||f.id===62||f.id===63,
     sanctionCards: f=>f.section==="G"||f.stage==="Sanction",
@@ -582,7 +581,6 @@ function renderDocCards(){
     {cat:"OVD Documents",docs:["Aadhaar Card (eKYC verified)","PAN Card","Driving Licence","Passport","Voter ID"],status:"Due Diligence Verified"},
     {cat:"Scheme Documents",docs:["RC Copy","Bank Statement (3 months)","Insurance Policy","Quotation","Invoice"],status:"RCU Verified"},
     {cat:"Pre-Disbursement Documents",docs:["Loan Agreement","Demand Promissory Note","Hypothecation Agreement","Insurance Cover Note","ECS/NACH Mandate"],status:"QC Verified"},
-    {cat:"Post-Disbursement Documents",docs:["Post-Dated Cheques","Security Cheque","Delivery Confirmation","RC Endorsement"],status:"Pending Collection"},
     {cat:"Additional Documents",docs:["Income Proof","Business Address Proof","Salary Slips","IT Returns","Bank Passbook"],status:"Credit Requested"},
     {cat:"System Generated Documents",docs:["Loan Application Form (PDF)","Sanction Letter (PDF)","Key Fact Statement (PDF)","Welcome Letter (PDF)","Delivery Order (PDF)","Credit Appraisal Memo (PDF)"],status:"Auto Generated"}
   ];
@@ -597,38 +595,6 @@ function renderDocCards(){
       <ul class="space-y-1.5 mt-2">
         ${d.docs.map(doc=>`<li class="text-xs text-gray-600 flex items-center gap-2"><i class="bi bi-file-text text-indigo-400 text-[10px]"></i>${doc}</li>`).join('')}
       </ul>
-    </div>
-  `).join('');
-}
-
-function renderCaseHistory(){
-  const entries = [
-    {stage:"Sales History",status:"completed",desc:"Lead created, KYC done, documents uploaded"},
-    {stage:"Due Diligence History",status:"completed",desc:"All documents verified; no compliance issues"},
-    {stage:"FI History",status:"completed",desc:"FI assigned, report submitted, evaluation completed"},
-    {stage:"TVR History",status:"completed",desc:"Tele verification completed; customer confirmed"},
-    {stage:"RCU History",status:"completed",desc:"Document verification completed; no adverse findings"},
-    {stage:"Credit History",status:"completed",desc:"CAM prepared, income validated, score card evaluated"},
-    {stage:"Deviation History",status:"completed",desc:"LTV deviation detected; approved by ASM & Business"},
-    {stage:"Business Approval History",status:"completed",desc:"Deal structure approved; deviation waiver granted"},
-    {stage:"ASM History",status:"completed",desc:"Case reviewed; recommendation submitted"},
-    {stage:"QC History",status:"completed",desc:"QC Maker & Checker verified all documents"},
-    {stage:"Disbursement History",status:"completed",desc:"Amount validated; authorized; CBS booking done"},
-    {stage:"Authorization History",status:"completed",desc:"Auth Done completed; loan disbursed"}
-  ];
-  document.getElementById('caseHistoryTimeline').innerHTML = entries.map((e,i)=>`
-    <div class="flex items-start gap-4 anim-fade" style="animation-delay:${i*0.05}s">
-      <div class="flex flex-col items-center">
-        <div class="timeline-dot completed"></div>
-        ${i<entries.length-1?'<div class="w-0.5 h-8 bg-indigo-200"></div>':''}
-      </div>
-      <div class="flex-1 glass rounded-xl p-3">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-semibold text-gray-800">${e.stage}</h4>
-          <span class="text-[10px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium"><i class="bi bi-check-circle-fill text-[9px] mr-1"></i>Completed</span>
-        </div>
-        <p class="text-xs text-gray-500 mt-1">${e.desc}</p>
-      </div>
     </div>
   `).join('');
 }
@@ -787,7 +753,6 @@ renderAllSections();
 renderTechSection();
 renderDocCategories();
 renderDocCards();
-renderCaseHistory();
 renderAuditTable();
 renderConfigItems();
 renderRoadmap();
